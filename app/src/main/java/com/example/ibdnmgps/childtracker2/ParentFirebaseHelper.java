@@ -192,16 +192,17 @@ public class ParentFirebaseHelper extends FirebaseHelper {
 
     }
 
-    //todo DELETE
-    public Boolean remove(Parent parent)
+    public Boolean remove(String parent_id, String child_id)
     {
-        if(parent!=null)
+        if(parent_id!=null)
         {
             try
             {
-                Query q = db.child("Parent").orderByKey().equalTo(parent.getId());
+                Query q = db.child("Child/"+child_id+"/parents/"+parent_id);
+                Query p = db.child("Parent/"+parent_id+"/children/"+child_id);
                 try{
                     q.getRef().removeValue();
+                    p.getRef().removeValue();
                     return true;
                 }catch(DatabaseException e) {
                     e.printStackTrace();

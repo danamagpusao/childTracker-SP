@@ -38,7 +38,7 @@ public class AddCurfew extends AppCompatActivity {
     CurfewFirebaseHelper helper;
     DatabaseReference db;
     String currentChildId;
-    Calendar startTime;
+    Calendar startTime, endTime;
     Curfew curfew;
     ChildTrackerDatabaseHelper h;
 
@@ -98,6 +98,7 @@ public class AddCurfew extends AppCompatActivity {
         end_text.setOnClickListener(set_time_listener);
 
         startTime = Calendar.getInstance();
+        endTime = Calendar.getInstance();
 
         System.out.println(currentChildId + "<<< add curfew child id");
 
@@ -152,6 +153,15 @@ public class AddCurfew extends AppCompatActivity {
                                 if(hourOfDay < 10) hour = "0"+hourOfDay;
                                 if(minute < 10) min = "0"+minute;
                                 end_text.setText(hour + ":" + min);
+                                endTime = Calendar.getInstance();
+                                endTime.set(
+                                        endTime.get(Calendar.YEAR),
+                                        endTime.get(Calendar.MONTH),
+                                        endTime.get(Calendar.DAY_OF_MONTH),
+                                        hourOfDay,
+                                        minute,
+                                        0
+                                );
                             }
                         }, mHour, mMinute, false);
                 timePickerDialog.show();
@@ -168,8 +178,9 @@ public class AddCurfew extends AppCompatActivity {
 
         //validate if valid
         if(b && !curfew.getStart().equals("") && !curfew.getEnd().equals("")){
-
-            scheduleNotification(getNotification());
+            // 0 start, 1 end
+            scheduleNotification(getNotification(0),0);
+            scheduleNotification(getNotification(1),1);
             Toast.makeText(AddCurfew.this, "Successfully added a curfew", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -177,22 +188,29 @@ public class AddCurfew extends AppCompatActivity {
 
     }
 
-    private void scheduleNotification(Notification notification) {
-
+    private void scheduleNotification(Notification notification, int _id) {
         Intent notificationIntent = new Intent(this, NotificationPublisher.class);
-        notificationIntent.putExtra(NotificationPublisher.NOTIFICATION_ID, 1);
+        notificationIntent.putExtra(NotificationPublisher.NOTIFICATION_ID, _id);
         notificationIntent.putExtra(NotificationPublisher.NOTIFICATION, notification);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        long futureInMillis = startTime.getTimeInMillis() - 900000; // pop up notification 15(900000) minutes before curfew start time
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, _id, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        long futureInMillis  = 0;
+        if(_id == 0)
+            futureInMillis = startTime.getTimeInMillis() - 900000; // pop up notification 15(900000) minutes before curfew start time
+        else if(_id == 1)
+            futureInMillis = endTime.getTimeInMillis() - 900000; // pop up notification 15(900000) minutes before curfew start time
+
         AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, futureInMillis, AlarmManager.INTERVAL_DAY,pendingIntent);
     }
 
-    private Notification getNotification() {
+    private Notification getNotification(int _id) {
         Notification.Builder builder = new Notification.Builder(this);
         builder.setContentTitle("Curfew");
-        builder.setContentText("15 minutes before curfew");
-        builder.setSmallIcon(R.drawable.common_google_signin_btn_icon_light); // todo icon
+        if(_id == 0)
+            builder.setContentText("15 minutes before curfew");
+        else if(_id == 1)
+            builder.setContentText("15 minutes before end of curfew");
+        builder.setSmallIcon(R.mipmap.logo_round);
         return builder.build();
     }
 

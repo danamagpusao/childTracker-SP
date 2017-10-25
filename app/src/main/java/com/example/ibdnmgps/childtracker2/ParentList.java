@@ -12,8 +12,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -50,7 +52,6 @@ public class ParentList extends ListActivity {
     ParentAdapter adapter;
     String currentChildId;
     ChildTrackerDatabaseHelper h;
-    ArrayList<String> parent_key_list = new ArrayList<>();
     ArrayList<Parent> first = new ArrayList<>();
 
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
@@ -67,7 +68,12 @@ public class ParentList extends ListActivity {
     private Button addBtn;
     private CountryCodePicker dCCp;
 
+    private Button oDelete;
+    private Switch oSwitch;
+
     private String phoneNum;
+    private PhoneAuthCredential pac;
+
 
 
     @Override
@@ -112,7 +118,8 @@ public class ParentList extends ListActivity {
                 Log.d(TAG,"onVerificationCompleted:" + phoneAuthCredential);
                 mVerificationInProgress = false;
                 Toast.makeText(ParentList.this, "Phone verification complete", Toast.LENGTH_SHORT).show();
-
+                pac = phoneAuthCredential;
+                addBtn.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -136,7 +143,6 @@ public class ParentList extends ListActivity {
 
                 mVerificationId = verificationId;
                 mResendToken = token;
-
                 dOTP.setVisibility(View.VISIBLE);
                 saveBtn.setVisibility(View.VISIBLE);
                 dResend.setVisibility(View.VISIBLE);
@@ -154,6 +160,7 @@ public class ParentList extends ListActivity {
             }
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                retrieveParent(dataSnapshot);
             }
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
@@ -175,12 +182,12 @@ public class ParentList extends ListActivity {
             @Override
             public void onClick(View v) {
                 String code = dOTP.getText().toString();
-                if (TextUtils.isEmpty(code)) {
+                if (TextUtils.isEmpty(code) && pac == null) {
                     dOTP.setError("Cannot be empty.");
                     return;
-                }
-
-                verifyPhoneNumberWithCode(mVerificationId, code);
+                }else if(pac != null) {
+                    signInWithPhoneAuthCredential(pac);
+                } else verifyPhoneNumberWithCode(mVerificationId, code);
             }
         });
 
@@ -198,12 +205,34 @@ public class ParentList extends ListActivity {
     }
 
     @Override
-    public void onListItemClick(ListView listView, View itemView, int position, long id){
+    public void onListItemClick(ListView listView, View itemView, final int position, long id){
 
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.layout_parent_options);
         dialog.setTitle("Options");
         final ParentList n = ParentList.this;
+
+
+        oDelete = (Button) dialog.findViewById(R.id.parent_options_delete);
+        oSwitch = (Switch)  dialog.findViewById(R.id.parent_options_switch);
+
+        oDelete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                helper.remove(first.get(position).getId(),h.getFiles("child_ref").toString());
+                first.remove(position);
+                adapter.notifyDataSetChanged();
+
+
+            }
+        });
+
+        oSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+
+            }
+        });
 
         View.OnClickListener l = new View.OnClickListener() {
             @Override
@@ -220,7 +249,6 @@ public class ParentList extends ListActivity {
 
     private void displayInputDialog() {
         adapter.notifyDataSetChanged();
-
         d.show();
     }
 
@@ -232,8 +260,12 @@ public class ParentList extends ListActivity {
                     parent.setId(ds.getKey());
                     parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
                     parent.setName(ds.child("name").getValue(String.class));
-                    if(!first.contains(parent))
-                        first.add(parent);
+                    boolean isDuplicate = false;
+                    for(Parent p : first) {
+                        if(parent.getPhoneNum().toString().equals(p.getPhoneNum().toString()))
+                            isDuplicate = true;
+                    }
+                    if(!isDuplicate) first.add(parent);
                     System.out.println(parent.getName());
 
                 }
@@ -259,6 +291,7 @@ public class ParentList extends ListActivity {
                             addParentToDB(user);
                             Toast.makeText(ParentList.this,"Added Parent Successfully! " +
                                     user.getPhoneNumber(), Toast.LENGTH_LONG).show();
+                            d.dismiss();
 
 
                         } else {

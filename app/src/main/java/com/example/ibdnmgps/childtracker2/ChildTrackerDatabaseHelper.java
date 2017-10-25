@@ -742,9 +742,14 @@ public class ChildTrackerDatabaseHelper extends SQLiteOpenHelper {
 
     public void resetDB(){
         ContentValues values = new ContentValues();
-        values.put(ChildTrackerDatabaseHelper.KEY_DEVICE, "");
-        values.put(ChildTrackerDatabaseHelper.KEY_MODE, "");
-        values.put(ChildTrackerDatabaseHelper.KEY_CHILD_REF, "");
+        values.put(KEY_FIRST, 1);
+        values.put(KEY_MODE, "");
+        values.put(KEY_PIN_CODE, "1234");
+        values.put(KEY_DEVICE, "");
+        values.put(KEY_CHILD_REF, "");
+        values.put(KEY_INT_OFF, 300000);
+        values.put(KEY_INT_ON, 300000);
+        values.put(KEY_OFFLINE_SEND, 0);
         updateChildTracker(values);
     }
 

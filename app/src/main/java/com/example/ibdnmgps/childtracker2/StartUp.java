@@ -21,15 +21,11 @@ public class StartUp extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView (R.layout.activity_start_up);
 
-        if (db == null) {
-            FirebaseDatabase database = FirebaseDatabase.getInstance();
-            database.setPersistenceEnabled(true);
-            db = database.getReference();
-        }
+        db =getDatabase();
 
 
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
-        /*
+
 
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
@@ -52,8 +48,18 @@ public class StartUp extends AppCompatActivity {
             }
         }, 3000);
 
-        */
 
+
+    }
+
+    public DatabaseReference getDatabase() {
+        if (db == null) {
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            database.setPersistenceEnabled(true);
+
+            return database.getReference();
+        }
+        return db;
     }
 
 
