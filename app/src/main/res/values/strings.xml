@@ -1,0 +1,129 @@
+<resources>
+    <string name="app_name">ChildTracker</string>
+    <string name="activate_btn_text">Start tracking</string>
+    <string name="start_up_password">Enter 4 Digit Pin Code</string>
+    <string name="start_up_confirm_password">Confirm 4 Digit Pin Code</string>
+    <string name="start_up_btn"> Save </string>
+    <string name="start_up_welcome"> Welcome to Child Tracker </string>
+    <string name="mode_parent">Parent Mode </string>
+    <string name="text_phone_number">Enter Phone Number</string>
+    <string name="text_phone_number_eg">e.g. 09XXXXXXXXX</string>
+    <string name="add_child_name">Child name</string>
+    <string name="add_child_num">Phone Number (e.g. 917xxxxxxx)</string>
+    <string name="title_activity_main2">Main2Activity</string>
+    <string name="title_activity_view_map">Map</string>
+    <string name="view_all_sf">View All Safezones</string>
+
+    <!--Activity ConfirmPassword !-->
+    <string name="confirmpass_title">Child Lock</string>
+    <string name="confirmpass_subtitle">This is for App Lock, to prevent the child from modifying the application</string>
+
+    <!--Activity setup1 !-->
+    <string name="setup1_title">This device belongs to</string>
+
+    <!--Activity addChildInformation !-->
+    <string name="aci_title"> Child Information</string>
+    <string name="aci_name"> Name</string>
+    <string name="aci_phone_num">e.g. 0917 XXX XXXX</string>
+
+    <!--Activity ChildHome !-->
+    <string name="childhome_SOS">SOS</string>
+
+    <!-- Activity AddCurfew !-->
+    <string name="addCurfew_start_time">Start Time</string>
+    <string name="addCurfew_end_time">End Time</string>
+    <string name="addCurfew_set">Set</string>
+
+    <!-- Activity AddCurfew Days!-->
+    <string name="addCurfew_mo">Mon</string>
+    <string name="addCurfew_tu">Tues</string>
+    <string name="addCurfew_we">Wed</string>
+    <string name="addCurfew_th">Thur</string>
+    <string name="addCurfew_fr">Fri</string>
+    <string name="addCurfew_sa">Sat</string>
+    <string name="addCurfew_su">Sun</string>
+
+    <!-- Dialog Add Parent !-->
+    <string name="addParent_password">Enter Password</string>
+    <string name="addParent_confirm_password">Confirm Password</string>
+    <string name="addParent_new_parent">New User? </string>
+
+
+    <!-- Activity Add Safezone !-->
+    <string name="addSafezone_lat">Lat:</string>
+    <string name="addSafezone_lon">Long:</string>
+    <string name="addSafezone_rad">Radius:</string>
+    <string name="addSafezone_hom">Home</string>
+    <string name="addSafezone_hint_m">in meters</string>
+
+    <!-- Activity Child Information !-->
+    <string name="childInformation_name">Name</string>
+    <string name="childInformation_phone_num">Phone Number</string>
+    <string name="childInformation_latest_loc">Latest Loc</string>
+    <string name="childInformation_curfew">View Curfew</string>
+    <string name="childInformation_safezone">View Safezone</string>
+    <string name="childInformation_location">Recent Locations</string>
+
+    <!-- Activity Enter Password !-->
+    <string name="enterPassword_reminder">!! Only parent can access this feature</string>
+
+    <!-- Layout Parent options !-->
+    <string name="parentOptions_Delete">Delete</string>
+    <string name="parentOptions_SMS">Receive SMS Updates</string>
+
+    <!-- Activity Settings !-->
+    <string name="settings_time_on">Time Interval (Online):</string>
+    <string name="settings_time_off">Time Interval (Offline):</string>
+    <string name="settings_sms">Send location updates via SMS</string>
+    <string name="settings_pincode">Change Pincode (default: 1234)</string>
+
+    <!--Activity UploadPic !-->
+    <string name="UA_upload">Upload</string>
+    <string name="UA_select">Browse</string>
+
+
+    <!--Activity User Info !-->
+    <string-array name="UI_user_type">
+        <item>Child</item>
+        <item>Parent</item>
+    </string-array>
+    <string name="UI_type_label">This device belongs to:</string>
+    <string name="UI_name_label">Nickname</string>
+    <string name="UI_password_hint">must be at least 8 characters</string>
+    <string name="UI_password_label">Password</string>
+
+    <!--Activity LogIn !-->
+    <string name="LogIn_SendCode">Send Verification Number</string>
+    <string name="LogIn_reminder">We will send you a number code to verify your phone number. Usage charges may apply depending on your service provider.</string>
+    <string name="LogIn_resend">Resend code</string>
+
+    <!-- Common !-->
+    <string name="common_next"> Next > </string>
+    <string name="common_child_mode">Child Mode</string>
+    <string name="common_parent_mode">Parent Mode</string>
+    <string name="common_save">SAVE</string>
+    <string name="common_ok">OK</string>
+    <string name="title_activity_parent_login">Sign in</string>
+
+    <!-- Edit Pincode -->
+    <string name="edit_pincode_newpincode">New Pincode</string>
+    <string name="edit_pincode_confirm">Confirm New Pincode</string>
+    <string name="edit_pincode_isSendSMS">Prompt parent/s on pincode update?</string>
+
+
+
+    <string name="child_lock_text">Enter 4-digit pincode to continue</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password (optional)</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email
+        completions."
+    </string>
+</resources>

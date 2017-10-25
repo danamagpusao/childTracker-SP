@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1">
+
+        <com.hbb20.CountryCodePicker
+            android:id="@+id/addParent_ccp"
+            android:layout_width="129dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="0dp"
+            android:layout_weight="0.34"
+            android:padding="0dp"
+            app:ccp_defaultPhoneCode="63"
+            app:ccp_showNameCode="false"
+            app:layout_constraintHorizontal_bias="0.703"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@+id/logIn_phoneNumber"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/parent_num"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/parent_name"
+        android:layout_below="@+id/parent_name"
+        android:ems="10"
+        android:hint="@string/add_child_num"
+        android:inputType="phone"
+        android:singleLine="true" />
+
+    <Button
+        android:id="@+id/saveParent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/addParent_cpassword_et"
+        android:layout_below="@+id/addParent_cpassword_et"
+        android:text="@string/LogIn_SendCode" />
+
+    <Button
+        android:id="@+id/addParent_resend"
+        android:layout_width="213dp"
+        android:layout_height="wrap_content"
+        android:text="@string/LogIn_resend"
+        android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/textView17"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        tools:text="@string/LogIn_reminder" />
+
+    <EditText
+        android:id="@+id/addParent_otp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="number"
+        android:visibility="invisible" />
+
+    <Button
+        android:id="@+id/addParent_btn"
+        android:layout_width="215dp"
+        android:layout_height="wrap_content"
+        android:text="@string/common_save"
+        android:visibility="invisible" />
+
+
+</LinearLayout>

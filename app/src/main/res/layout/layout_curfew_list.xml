@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="1">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="86dp"
+        android:orientation="horizontal"
+        android:layout_weight="0.08">
+
+        <LinearLayout
+            android:layout_width="293dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:weightSum="1">
+
+            <TextView
+                android:id="@+id/layout_curfew_list_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.94"
+                android:fontFamily="serif-monospace"
+                android:gravity="bottom"
+                android:paddingLeft="20dp"
+                android:text="TextView"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
+                android:textColor="@color/common_google_signin_btn_text_dark_focused" />
+
+            <TextView
+                android:id="@+id/layout_curfew_list_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="41dp"
+                android:fontFamily="sans-serif-condensed"
+                android:paddingLeft="40dp"
+                android:text="TextView"
+                android:textColor="@color/common_google_signin_btn_text_light_focused" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
