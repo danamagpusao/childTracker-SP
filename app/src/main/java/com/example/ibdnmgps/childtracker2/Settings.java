@@ -29,13 +29,12 @@ public class Settings extends AppCompatActivity {
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
 
         on_et = (EditText) findViewById(R.id.on_int);
-        off_et = (EditText) findViewById(R.id.off_int);
         sms = (Switch) findViewById(R.id.is_sms);
         pincode_btn = (Button) findViewById(R.id.pincode_settings);
 
         on_et.setText(h.getFiles("on"));
-        off_et.setText(h.getFiles("off"));
-        if(sms.isChecked()) sms.setChecked(true);
+        if(Integer.parseInt(h.getFiles("sms")) == 1) sms.setChecked(true);
+        else sms.setChecked(false);
         pincode_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -49,17 +48,26 @@ public class Settings extends AppCompatActivity {
     public void saveSettings(View view) {
         ContentValues values = new ContentValues();
         // Todo Validator
-        values.put(ChildTrackerDatabaseHelper.KEY_INT_OFF, off_et.getText().toString());
-        values.put(ChildTrackerDatabaseHelper.KEY_INT_ON, on_et.getText().toString());
-        if(sms.isChecked()) values.put(ChildTrackerDatabaseHelper.KEY_OFFLINE_SEND, 1);
-        else  values.put(ChildTrackerDatabaseHelper.KEY_OFFLINE_SEND, 0);
-        h.updateChildTracker(values);
+        if(validator()) {
+            values.put(ChildTrackerDatabaseHelper.KEY_INT_ON, Integer.parseInt(on_et.getText().toString()) * 60000);
+            if (sms.isChecked()) values.put(ChildTrackerDatabaseHelper.KEY_OFFLINE_SEND, 1);
+            else values.put(ChildTrackerDatabaseHelper.KEY_OFFLINE_SEND, 0);
+            h.updateChildTracker(values);
 
-        if(h.getFiles("on") != on_et.getText().toString() || h.getFiles("off") !=  off_et.getText().toString()){
-            Intent i = new Intent(getApplicationContext(),ChildTrackerService.class);
-            stopService(i);
-            startService(i);
+            if (!h.getFiles("on").toString().equals(on_et.getText().toString())) {
+                Intent i = new Intent(getApplicationContext(), ChildTrackerService.class);
+                stopService(i);
+                startService(i);
+            }
+            finish();
         }
-        finish();
+    }
+
+    public boolean validator () {
+        if(Integer.parseInt(on_et.getText().toString()) < 5) {
+                on_et.setError("must be atleast 5!");
+            return false;
+        }
+        return true;
     }
 }

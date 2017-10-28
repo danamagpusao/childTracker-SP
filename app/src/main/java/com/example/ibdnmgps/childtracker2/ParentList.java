@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import static android.R.attr.childDivider;
 import static android.R.attr.password;
 import static android.R.id.list;
+import static android.media.CamcorderProfile.get;
 
 public class ParentList extends ListActivity {
 
@@ -230,6 +231,10 @@ public class ParentList extends ListActivity {
         oSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                Parent p = first.get(position);
+                if(compoundButton.isChecked()) p.setReceiveSMS(1);
+                else p.setReceiveSMS(0);
+                helper.update(p);
 
             }
         });
@@ -262,8 +267,7 @@ public class ParentList extends ListActivity {
                     parent.setName(ds.child("name").getValue(String.class));
                     boolean isDuplicate = false;
                     for(Parent p : first) {
-                        if(parent.getPhoneNum().toString().equals(p.getPhoneNum().toString()))
-                            isDuplicate = true;
+                        if(parent.getPhoneNum().toString().equals( p.getPhoneNum().toString())) isDuplicate = true;
                     }
                     if(!isDuplicate) first.add(parent);
                     System.out.println(parent.getName());
@@ -287,10 +291,15 @@ public class ParentList extends ListActivity {
                         if(task.isSuccessful()) {
                             Log.d(TAG, "signInWithCredential:success");
                             FirebaseUser user = task.getResult().getUser();
+                            if(helper.isParent(user.getUid())){
+                                addParentToDB(user);
+                                Toast.makeText(ParentList.this,"Added Parent Successfully! " +
+                                        user.getPhoneNumber(), Toast.LENGTH_LONG).show();
+                            }else{
+                                Toast.makeText(ParentList.this,"Phone Number provided already exists as child!" +
+                                        user.getPhoneNumber(), Toast.LENGTH_LONG).show();
+                            }
 
-                            addParentToDB(user);
-                            Toast.makeText(ParentList.this,"Added Parent Successfully! " +
-                                    user.getPhoneNumber(), Toast.LENGTH_LONG).show();
                             d.dismiss();
 
 

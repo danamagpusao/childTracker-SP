@@ -16,6 +16,7 @@ public class Parent {
     protected String name;
     protected String phoneNum;
     protected String password;
+    protected int receiveSMS; // 0 false 1 true
 
     public Parent(){
 
@@ -44,6 +45,9 @@ public class Parent {
         this.password = password;
     }
 
+    public void setReceiveSMS(int receiveSMS) {
+        this.receiveSMS = receiveSMS;
+    }
     public String getId() {
         return this.id;
     }
@@ -56,6 +60,10 @@ public class Parent {
 
     public String getPassword(){
         return password;
+    }
+
+    public int getReceiveSMS(){
+        return receiveSMS;
     }
 
     @Exclude

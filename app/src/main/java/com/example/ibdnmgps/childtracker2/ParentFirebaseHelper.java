@@ -227,14 +227,9 @@ public class ParentFirebaseHelper extends FirebaseHelper {
         {
             try
             {
-                Query q = db.child("Parent").orderByKey().equalTo(parent.getId());
-                try{
-                    q.getRef().setValue(parent);
-                    return true;
-                }catch(DatabaseException e) {
-                    e.printStackTrace();
-                    return false;
-                }
+                DatabaseReference id =  db.child("Parent").child(parent.getId());
+                id.child("name").setValue(parent.getName());
+                id.child("receiveSMS").setValue(parent.getReceiveSMS());
 
             }catch (DatabaseException e)
             {
@@ -294,6 +289,11 @@ public class ParentFirebaseHelper extends FirebaseHelper {
         }
 
 
+    }
+
+    public Boolean isParent(String _id){
+        if(db.child("Parent").child(_id) != null) return true;
+        else return false;
     }
 
     public ArrayList<Parent> retrieve(){

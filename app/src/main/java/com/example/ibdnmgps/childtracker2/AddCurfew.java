@@ -90,8 +90,9 @@ public class AddCurfew extends AppCompatActivity {
         View.OnClickListener set_time_listener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                System.out.println("SET TIME IN");
-                setTime(v);
+                if(h.getFiles("device").equals("child"))
+                    setTime(v);
+                else Toast.makeText(AddCurfew.this,"Curfew can only be set in Child Device",Toast.LENGTH_SHORT).show();
             }
         };
         start_text.setOnClickListener(set_time_listener);

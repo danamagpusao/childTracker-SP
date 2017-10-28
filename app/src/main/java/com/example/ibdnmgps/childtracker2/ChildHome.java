@@ -4,6 +4,7 @@ import android.*;
 import android.Manifest;
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -67,17 +68,15 @@ public class ChildHome extends AppCompatActivity {
         ref = h.getFiles("child_ref");
         helper = new LocationFirebaseHelper(db, ref);
 
-        sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT),0);
-        deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED),0);
+        sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
+        deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
         sosBtn = (Button) findViewById(R.id.sosBtn);
 
-        sosBtn.setOnTouchListener(new View.OnTouchListener()
-        {
+        sosBtn.setOnTouchListener(new View.OnTouchListener() {
             private final Handler handler = new Handler();
             private final Runnable runnable = new Runnable() {
                 public void run() {
-                    if(mBooleanIsPressed)
-                    {
+                    if (mBooleanIsPressed) {
                         SOS();
                     }
                 }
@@ -86,15 +85,15 @@ public class ChildHome extends AppCompatActivity {
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if(event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     // Execute your Runnable after 5000 milliseconds = 5 seconds.
 //After this 5secs it will check if is pressed
                     handler.postDelayed(runnable, 5000);
                     mBooleanIsPressed = true;
                 }
 
-                if(event.getAction() == MotionEvent.ACTION_UP) {
-                    if(mBooleanIsPressed) {
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    if (mBooleanIsPressed) {
                         mBooleanIsPressed = false;
                         handler.removeCallbacks(runnable);
                     }
@@ -146,12 +145,21 @@ public class ChildHome extends AppCompatActivity {
     }
 
     private boolean runtime_permissions() {
+
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.SEND_SMS},
+                    PERMISSION_SEND_SMS);
+        }
+
         if (Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
 
             return true;
         }
+
+
         return false;
     }
 
@@ -166,62 +174,60 @@ public class ChildHome extends AppCompatActivity {
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location location = getLocation();
         ChildLocation child_loc = new ChildLocation();
         child_loc.setLocation(location);
         Date date = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy h:mm:ss a");
         String formattedDate = sdf.format(date);
         child_loc.setTimeCreated(formattedDate);
-        String loc_ref =helper.save(child_loc);
+        String loc_ref = helper.save(child_loc);
 
         //trigger SMS
         try {
             //trigger SMS
-            if(!parent_list.isEmpty())
-            for(Parent p : parent_list)
-                sendSMS(p,child_loc);
+            if (!parent_list.isEmpty());
+                for (Parent p : parent_list)
+                    sendSMS(p, child_loc);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         //save to firebase
         try {
-            DatabaseReference sos = db.child("SOS").push();
-            sos.child("loc_ref").setValue(loc_ref);
-            sos.child("child_ref").setValue(ref);
-        }catch(DatabaseException e){
+              DatabaseReference sos = db.child("SOS").push();
+              sos.child("child_ref").setValue(ref);
+              sos.child("loc_ref").setValue(loc_ref);
+        } catch (DatabaseException e) {
             e.printStackTrace();
         }
 
     }
 
-    private void sendSMS(Parent parent, ChildLocation child_loc){
-        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS)
-                !=  PackageManager.PERMISSION_GRANTED){
+    private void sendSMS(Parent parent, ChildLocation child_loc) {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.SEND_SMS},
                     PERMISSION_SEND_SMS);
         }
 
-        SmsManager sms =  SmsManager.getDefault();
-        sms.sendTextMessage(parent.getPhoneNum(),null,
-                "SOS MESSAGE ("+child_loc.getTimeCreated()+ "\n" +
-                "Lat:" + child_loc.getLocation().getLatitude() +
-                "\n Long:" + child_loc.getLocation().getLongitude(), sentPI, deliveredPI);
+        SmsManager sms = SmsManager.getDefault();
+        sms.sendTextMessage(parent.getPhoneNum(), null,
+                "SOS MESSAGE (" + child_loc.getTimeCreated() + "\n" +
+                        "Lat:" + child_loc.getLocation().getLatitude() +
+                        "\n Long:" + child_loc.getLocation().getLongitude(), sentPI, deliveredPI);
 
     }
 
 
-
     private void retrieveParent(DataSnapshot dataSnapshot) {
-        for (DataSnapshot ds : dataSnapshot.getChildren())
-        {
-            if(dataSnapshot.getKey().equals("Parent") && ds.child("children/"+ref).getValue() != null) {
+        for (DataSnapshot ds : dataSnapshot.getChildren()) {
+            if (dataSnapshot.getKey().equals("Parent") && ds.child("children/" + ref).getValue() != null) {
                 Parent parent = new Parent();
                 parent.setId(ds.getKey());
                 parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
                 parent.setName(ds.child("name").getValue(String.class));
-                if(!parent_list.contains(parent))
+                if (!parent_list.contains(parent))
                     parent_list.add(parent);
                 System.out.println(parent.getName());
 
@@ -232,7 +238,6 @@ public class ChildHome extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
         smsSentReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -260,37 +265,37 @@ public class ChildHome extends AppCompatActivity {
         smsDeliveredReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                    switch (getResultCode()){
-                        case Activity.RESULT_OK:
-                            Toast.makeText(ChildHome.this, "SMS Delivered", Toast.LENGTH_SHORT).show();
-                            break;
-                        case Activity.RESULT_CANCELED:
-                            Toast.makeText(ChildHome.this, "SMS not Delivered", Toast.LENGTH_SHORT).show();
-                            break;
+                switch (getResultCode()){
+                    case Activity.RESULT_OK:
+                        Toast.makeText(ChildHome.this, "SMS Delivered", Toast.LENGTH_SHORT).show();
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        Toast.makeText(ChildHome.this, "SMS not Delivered", Toast.LENGTH_SHORT).show();
+                        break;
 
-                    }
+                }
             }
         };
-
         registerReceiver(smsSentReceiver, new IntentFilter(SENT));
         registerReceiver(smsDeliveredReceiver, new IntentFilter(DELIVERED));
 
-        if(broadcastReceiver == null){
+
+        if (broadcastReceiver == null) {
             broadcastReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    Toast.makeText(ChildHome.this,intent.getExtras().get("coordinates")+"",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ChildHome.this, intent.getExtras().get("coordinates") + "", Toast.LENGTH_SHORT).show();
 
                 }
             };
         }
-        registerReceiver(broadcastReceiver,new IntentFilter("location_update"));
+        registerReceiver(broadcastReceiver, new IntentFilter("location_update"));
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(broadcastReceiver != null){
+        if (broadcastReceiver != null) {
             unregisterReceiver(broadcastReceiver);
         }
     }
@@ -299,25 +304,43 @@ public class ChildHome extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode == 100){
-            if( grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED){
-                Intent i =new Intent(getApplicationContext(),ChildTrackerService.class);
+        if (requestCode == 100) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                Intent i = new Intent(getApplicationContext(), ChildTrackerService.class);
                 startService(i);
                 locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-            }else {
+            } else {
                 runtime_permissions();
             }
         }
     }
 
     @Override
-    public void onPause(){
+    public void onPause() {
         super.onPause();
+
         unregisterReceiver(smsDeliveredReceiver);
         unregisterReceiver(smsSentReceiver);
     }
 
+    public Location getLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return getLocation();
+        }
 
+        //dangerous
+        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if(location != null)  return location;
+        else return getLocation();
+
+    }
 
 
 }

@@ -1,16 +1,22 @@
 package com.example.ibdnmgps.childtracker2;
 
+import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,8 +24,10 @@ import android.os.IBinder;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.NotificationCompat;
 import android.telephony.SmsManager;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.firebase.database.ChildEventListener;
@@ -29,6 +37,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -46,6 +57,8 @@ import static android.R.attr.name;
  */
 public class ChildTrackerService extends Service {
 
+    private static String TAG = "ChildTrackerService";
+
     private LocationListener listener;
     private LocationManager locationManager;
 
@@ -59,6 +72,15 @@ public class ChildTrackerService extends Service {
     private ArrayList<String> parent_key_list = new ArrayList<>();
     private ParentFirebaseHelper ch;
     private ArrayList<Parent> parent_list = new ArrayList<>();
+
+
+    //SMS feature
+    private int PERMISSION_SEND_SMS = 1;
+    private PendingIntent sentPI, deliveredPI;
+    private String SENT = "SMS_SENT";
+    private String DELIVERED = "SMS_DELIVERED";
+    private BroadcastReceiver smsSentReceiver, smsDeliveredReceiver;
+
 
     @Nullable
     @Override
@@ -75,45 +97,45 @@ public class ChildTrackerService extends Service {
         helper = new LocationFirebaseHelper(db,ref);
 
         db.addChildEventListener(new ChildEventListener() {
-                                     @Override
-                                     public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                                         for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                                             if (ds.getKey().equals(ref)) { //belongs to current child
-                                                 parent_key_list.clear();
-                                                 for (DataSnapshot wow : ds.child("parents").getChildren()) {
-                                                     if (!parent_key_list.contains(wow.getKey()))
-                                                         parent_key_list.add(wow.getKey());
-                                                 }
-                                             }
-                                         }
-                                         parent_list.clear();
-                                         for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                                             if (parent_key_list.contains(ds.getKey())) {
-                                                 Parent parent = new Parent();
-                                                 parent.setId(ds.getKey());
-                                                 parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
-                                                 parent.setName(ds.child("name").getValue(String.class));
-                                                 parent.setPassword(ds.child("password").getValue(String.class));
-                                                 parent_list.add(parent);
-                                                 System.out.println("key" + ds.getKey());
-                                             }
-                                         }
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    if (ds.getKey().equals(ref)) { //belongs to current child
+                        parent_key_list.clear();
+                        for (DataSnapshot wow : ds.child("parents").getChildren()) {
+                            if (!parent_key_list.contains(wow.getKey()))
+                                parent_key_list.add(wow.getKey());
+                        }
+                    }
+                }
+                parent_list.clear();
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    if (parent_key_list.contains(ds.getKey())) {
+                        Parent parent = new Parent();
+                        parent.setId(ds.getKey());
+                        parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
+                        parent.setName(ds.child("name").getValue(String.class));
+                        parent.setPassword(ds.child("password").getValue(String.class));
+                        parent_list.add(parent);
+                        System.out.println("key" + ds.getKey());
+                    }
+                }
 
-                                     }
-                                     @Override
-                                     public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                                     }
-                                     @Override
-                                     public void onChildRemoved(DataSnapshot dataSnapshot) {
-                                         // first.remove(dataSnapshot.getValue(String.class));
-                                     }
-                                     @Override
-                                     public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-                                     }
-                                     @Override
-                                     public void onCancelled(DatabaseError databaseError) {
-                                     }
-                                 });
+            }
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+            }
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                // first.remove(dataSnapshot.getValue(String.class));
+            }
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+            }
+        });
 
 
         // listener to check if the child is at HOME at specified curfew
@@ -125,89 +147,6 @@ public class ChildTrackerService extends Service {
                 i.putExtra("coordinates", location.getLongitude() + " " + location.getLatitude());
                 sendBroadcast(i);
                 handleNewLocation(location);
-
-                curLoc = location;
-
-                //check if curfew
-                final ArrayList<Curfew> curfew_list = new ArrayList<Curfew>();
-                // -- retrieves curfew_list of child
-                db.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                            if (ds.getKey().equals(ref)) { //belongs to current child
-                                for (DataSnapshot wow : ds.child("Curfew").getChildren()) {
-                                    Curfew curfew = new Curfew();
-                                    curfew.setId(wow.getKey());
-                                    curfew.setStart(wow.child("start").getValue(String.class));
-                                    curfew.setEnd(wow.child("end").getValue(String.class));
-                                    ArrayList<String> days = new ArrayList<>();
-                                    for(DataSnapshot d : wow.child("days").getChildren()){
-                                        days.add(d.getKey());
-                                    }
-                                    curfew.setDays(days);
-                                    curfew_list.add(curfew);
-                                }
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-
-                // --- checks date and time
-
-                Date now = new Date();
-                SimpleDateFormat time_format = new SimpleDateFormat("HH:mm");
-                SimpleDateFormat day_format = new SimpleDateFormat("EEEE");
-
-                for(Curfew cur : curfew_list) {
-                    String day_str = day_format.format(now);
-                    int start_diff = 0, end_diff = 0;
-                    //--compare start time
-                    try {
-                        start_diff = now.compareTo(time_format.parse(cur.getStart()));
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-
-                    //--compare end time
-                    try {
-                        end_diff = now.compareTo(time_format.parse(cur.getEnd()));
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-
-                    if(start_diff >= 0 ||  end_diff <=0  ){
-                        // notif
-                        android.support.v4.app.NotificationCompat.Builder mBuilder =
-                                new NotificationCompat.Builder(ChildTrackerService.this)
-                                        .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark_normal)
-                                        .setContentTitle("CURFEW")
-                                        .setContentText("Time to go home");
-
-
-                        Intent resultIntent = new Intent(ChildTrackerService.this, ChildHome.class); // todo fix
-
-                        PendingIntent resultPendingIntent =
-                                PendingIntent.getActivity(
-                                        ChildTrackerService.this,
-                                        (int) System.currentTimeMillis(),
-                                        resultIntent,
-                                        PendingIntent.FLAG_UPDATE_CURRENT
-                                );
-
-                        mBuilder.setContentIntent(resultPendingIntent);
-
-                        NotificationManager mNotifyMgr =
-                                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                        mNotifyMgr.notify(001, mBuilder.build());
-
-                    }
-                }
 
             }
 
@@ -234,38 +173,81 @@ public class ChildTrackerService extends Service {
         //noinspection MissingPermission
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Integer.parseInt(h.getFiles("on")), 0, listener); // ToDo
         try {
-            smsService();
+
         } catch (Exception e) {
+            try{
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, Integer.parseInt(h.getFiles("on")), 0, listener);
+            }catch(Exception ex){
+                ex.printStackTrace();
+            }
             e.printStackTrace();
         }
+
+        smsSentReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (getResultCode()) {
+                    case Activity.RESULT_OK:
+                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Sent", Toast.LENGTH_SHORT).show();
+                        break;
+                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Generic Failure", Toast.LENGTH_SHORT).show();
+                        break;
+                    case SmsManager.RESULT_ERROR_NO_SERVICE:
+                        Toast.makeText(ChildTrackerService.this, "SMS Location Update No Service", Toast.LENGTH_SHORT).show();
+                        break;
+                    case SmsManager.RESULT_ERROR_NULL_PDU:
+                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Null PDU", Toast.LENGTH_SHORT).show();
+                        break;
+                    case SmsManager.RESULT_ERROR_RADIO_OFF:
+                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Radio Off", Toast.LENGTH_SHORT).show();
+                        break;
+
+                }
+            }
+        };
+
+        smsDeliveredReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (getResultCode()) {
+                    case Activity.RESULT_OK:
+                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Delivered", Toast.LENGTH_SHORT).show();
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        Toast.makeText(ChildTrackerService.this, "SMS Location Update not Delivered", Toast.LENGTH_SHORT).show();
+                        break;
+
+                }
+            }
+        };
+
+        registerReceiver(smsSentReceiver, new IntentFilter(SENT));
+        registerReceiver(smsDeliveredReceiver, new IntentFilter(DELIVERED));
     }
 
+    public void sendSMS(ArrayList<Parent> list, ChildLocation loc) {
+        for(Parent p : list) {
+            sendToParent(p.getPhoneNum(),
+                    "Location Update ("+loc.getTimeCreated() +"): \n" +
+                    "lat:" + loc.getLocation().getLatitude() +"\n" +
+                    "long:" + loc.getLocation().getLongitude()
+                    );
+        }
 
-    public void smsService() throws Exception{
-        ScheduledExecutorService scheduler =
-                Executors.newSingleThreadScheduledExecutor();
-
-        scheduler.scheduleWithFixedDelay
-                (new Runnable() {
-                    public void run() {
-                        System.out.println("SCHEDULEDDD");
-                        if(!parent_list.isEmpty()){
-                            for(Parent parent : parent_list) {
-                                SmsManager sm = SmsManager.getDefault();
-                                // here is where the destination of the text should go
-                                //String number = parent.getPhoneNum();
-                                String number = "+6309175235809";
-                                sm.sendTextMessage(number, null, "Your child is at lat:" + curLoc.getLatitude() + " long:" + curLoc.getLongitude(), null, null);
-
-                            System.out.println("sent location to "+ parent.getName()+ ": " + parent.getPhoneNum() );
-                            }
-                        }
-
-
-
-                    }
-                }, 0, Integer.parseInt(h.getFiles("off")), TimeUnit.MILLISECONDS);
     }
+
+    private void sendToParent(String number, String message) {
+        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS)
+                !=  PackageManager.PERMISSION_GRANTED){
+        }
+
+        SmsManager sms =  SmsManager.getDefault();
+        sms.sendTextMessage(number,null,
+               message, null, null);
+
+    }
+
 
     private void handleNewLocation(Location location) {
         System.out.println("OHH HI" + location.toString());
@@ -278,17 +260,35 @@ public class ChildTrackerService extends Service {
         child_loc.setTimeCreated(formattedDate);
         if(helper.save(child_loc)!= null)
             System.out.println("saved to DB");
+
+        if(!isNetworkAvailable()){
+            sendSMS(parent_list,child_loc);
+        }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        unregisterReceiver(smsDeliveredReceiver);
+        unregisterReceiver(smsSentReceiver);
+
+
         if(locationManager != null){
             //noinspection MissingPermission
             locationManager.removeUpdates(listener);
         }
         is_run = false;
     }
+
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null;
+    }
+
+
 
 
 }
