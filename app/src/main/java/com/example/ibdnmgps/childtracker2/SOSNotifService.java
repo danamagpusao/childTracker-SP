@@ -31,6 +31,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 7/7/2017
@@ -92,6 +94,31 @@ public class SOSNotifService extends Service {
         });
 
         System.out.println("SOSNotifService Started --- ");
+
+        SmsReceiver.bindListener(new SmsListener() {
+            @Override
+            public void messageReceived(String messageText) {
+
+                //From the received text string you may do string operations to get the required OTP
+                //It depends on your SMS format
+                Log.e("Message",messageText);
+                Toast.makeText(SOSNotifService.this,"Message: "+messageText,Toast.LENGTH_LONG).show();
+
+                // If your OTP is six digits number, you may use the below code
+
+                Pattern distance_pattern = Pattern.compile("[1-9]{1,}\\.[1-9]{1,}");
+                Matcher matcher = distance_pattern.matcher(messageText);
+                String otp;
+                while (matcher.find())
+                {
+                    otp = matcher.group();
+                }
+
+
+
+
+            }
+        });
 
     }
 

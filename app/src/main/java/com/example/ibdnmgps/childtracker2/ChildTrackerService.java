@@ -35,6 +35,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
@@ -66,12 +67,9 @@ public class ChildTrackerService extends Service {
     private LocationFirebaseHelper helper;
     private String ref;
     private ChildTrackerDatabaseHelper h;
-    private  Handler mHandler=new Handler();
-    private Location curLoc = null;
-    private boolean is_run = true;
     private ArrayList<String> parent_key_list = new ArrayList<>();
-    private ParentFirebaseHelper ch;
     private ArrayList<Parent> parent_list = new ArrayList<>();
+    private ArrayList<Safezone> safezone_list = new ArrayList<>();
 
 
     //SMS feature
@@ -80,7 +78,7 @@ public class ChildTrackerService extends Service {
     private String SENT = "SMS_SENT";
     private String DELIVERED = "SMS_DELIVERED";
     private BroadcastReceiver smsSentReceiver, smsDeliveredReceiver;
-
+    private int interval;
 
     @Nullable
     @Override
@@ -93,41 +91,23 @@ public class ChildTrackerService extends Service {
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
         ref = h.getFiles("child_ref");
         db = FirebaseDatabase.getInstance().getReference();
-        ch = new ParentFirebaseHelper(db,ref);
         helper = new LocationFirebaseHelper(db,ref);
 
         db.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    if (ds.getKey().equals(ref)) { //belongs to current child
-                        parent_key_list.clear();
-                        for (DataSnapshot wow : ds.child("parents").getChildren()) {
-                            if (!parent_key_list.contains(wow.getKey()))
-                                parent_key_list.add(wow.getKey());
-                        }
-                    }
-                }
-                parent_list.clear();
-                for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    if (parent_key_list.contains(ds.getKey())) {
-                        Parent parent = new Parent();
-                        parent.setId(ds.getKey());
-                        parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
-                        parent.setName(ds.child("name").getValue(String.class));
-                        parent.setPassword(ds.child("password").getValue(String.class));
-                        parent_list.add(parent);
-                        System.out.println("key" + ds.getKey());
-                    }
-                }
-
+                retrieveParent(dataSnapshot);
+                retrieveSafezone(dataSnapshot);
             }
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                retrieveSafezone(dataSnapshot);
+                retrieveParent(dataSnapshot);
             }
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
-                // first.remove(dataSnapshot.getValue(String.class));
+                retrieveSafezone(dataSnapshot);
+                retrieveParent(dataSnapshot);
             }
             @Override
             public void onChildMoved(DataSnapshot dataSnapshot, String s) {
@@ -136,9 +116,8 @@ public class ChildTrackerService extends Service {
             public void onCancelled(DatabaseError databaseError) {
             }
         });
+        
 
-
-        // listener to check if the child is at HOME at specified curfew
         listener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
@@ -147,7 +126,6 @@ public class ChildTrackerService extends Service {
                 i.putExtra("coordinates", location.getLongitude() + " " + location.getLatitude());
                 sendBroadcast(i);
                 handleNewLocation(location);
-
             }
 
             @Override
@@ -167,21 +145,8 @@ public class ChildTrackerService extends Service {
                 startActivity(i);
             }
         };
-
-        locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-
-        //noinspection MissingPermission
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Integer.parseInt(h.getFiles("on")), 0, listener); // ToDo
-        try {
-
-        } catch (Exception e) {
-            try{
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, Integer.parseInt(h.getFiles("on")), 0, listener);
-            }catch(Exception ex){
-                ex.printStackTrace();
-            }
-            e.printStackTrace();
-        }
+        interval = Integer.parseInt(h.getFiles("on"));
+        setLocationManager();
 
         smsSentReceiver = new BroadcastReceiver() {
             @Override
@@ -226,22 +191,36 @@ public class ChildTrackerService extends Service {
         registerReceiver(smsDeliveredReceiver, new IntentFilter(DELIVERED));
     }
 
+    private void setLocationManager() {
+        locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+        try {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, interval, 0, listener); // ToDo
+        }catch(Exception e) {
+            try{
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, interval, 0, listener); // ToDo
+
+            }catch(Exception ex) {
+                Log.i(TAG, "cannot_retrieve_location");
+            }
+        }
+    }
+
     public void sendSMS(ArrayList<Parent> list, ChildLocation loc) {
+        if(Integer.parseInt(h.getFiles("sms")) == 1 )
         for(Parent p : list) {
             sendToParent(p.getPhoneNum(),
                     "Location Update ("+loc.getTimeCreated() +"): \n" +
+                    "Child ID:" + ref + "\n" +
                     "lat:" + loc.getLocation().getLatitude() +"\n" +
                     "long:" + loc.getLocation().getLongitude()
                     );
         }
-
     }
 
     private void sendToParent(String number, String message) {
         if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS)
                 !=  PackageManager.PERMISSION_GRANTED){
         }
-
         SmsManager sms =  SmsManager.getDefault();
         sms.sendTextMessage(number,null,
                message, null, null);
@@ -250,20 +229,44 @@ public class ChildTrackerService extends Service {
 
 
     private void handleNewLocation(Location location) {
-        System.out.println("OHH HI" + location.toString());
-        //todo save to DB
-        ChildLocation child_loc = new ChildLocation();
-        child_loc.setLocation(location);
-        Date date = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy h:mm:ss a");
-        String formattedDate = sdf.format(date);
-        child_loc.setTimeCreated(formattedDate);
-        if(helper.save(child_loc)!= null)
-            System.out.println("saved to DB");
-
-        if(!isNetworkAvailable()){
-            sendSMS(parent_list,child_loc);
+        if(!checkSafeZone(location)){
+            ChildLocation child_loc = new ChildLocation();
+            child_loc.setLocation(location);
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy h:mm:ss a");
+            String formattedDate = sdf.format(date);
+            child_loc.setTimeCreated(formattedDate);
+            if(helper.save(child_loc)!= null)
+                System.out.println("saved to DB");
+            if(!isNetworkAvailable()){ // sends SMS if internet connection is not available
+                sendSMS(parent_list,child_loc);
+            }
         }
+    }
+
+    private boolean checkSafeZone(Location location) {
+        //checks if distance is within safezone radius
+        Boolean bool= false;
+        //TestingOnlyRemove
+        if(safezone_list.isEmpty()) {
+            Toast.makeText(ChildTrackerService.this, "no safezone", Toast.LENGTH_SHORT).show();
+        }
+        //checks if safezone-location distance is within atleast one safezone radius
+        for(Safezone s : safezone_list) {
+            Location temp = new Location("safezone");
+            temp.setLatitude(s.getCenter().getLatitude());
+            temp.setLongitude(s.getCenter().getLongitude());
+            if(getDistance(location,temp) <= s.getRadius()) bool = true;
+
+            Toast.makeText(ChildTrackerService.this, getDistance(location,temp) + "vs" + s.getRadius() , Toast.LENGTH_SHORT).show();
+        }
+        return bool;
+    }
+
+    private Double getDistance(Location location, Location safezone) {
+        double latDis = location.getLatitude() - safezone.getLatitude();
+        double lonDis = location.getLongitude() - safezone.getLongitude();
+        return Math.sqrt((latDis * latDis) + (lonDis * lonDis));
     }
 
     @Override
@@ -272,12 +275,10 @@ public class ChildTrackerService extends Service {
         unregisterReceiver(smsDeliveredReceiver);
         unregisterReceiver(smsSentReceiver);
 
-
         if(locationManager != null){
             //noinspection MissingPermission
             locationManager.removeUpdates(listener);
         }
-        is_run = false;
     }
 
 
@@ -287,6 +288,58 @@ public class ChildTrackerService extends Service {
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null;
     }
+
+    public void retrieveParent(DataSnapshot dataSnapshot){
+        for (DataSnapshot ds : dataSnapshot.getChildren()) {
+            if (ds.getKey().equals(ref)) { //belongs to current child
+                parent_key_list.clear();
+                for (DataSnapshot wow : ds.child("parents").getChildren()) {
+                    if (!parent_key_list.contains(wow.getKey()))
+                        parent_key_list.add(wow.getKey());
+                }
+            }
+        }
+        parent_list.clear();
+        for (DataSnapshot ds : dataSnapshot.getChildren()) {
+            if (parent_key_list.contains(ds.getKey())) {
+                Parent parent = new Parent();
+                parent.setId(ds.getKey());
+                parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
+                parent.setName(ds.child("name").getValue(String.class));
+                parent.setPassword(ds.child("password").getValue(String.class));
+                parent_list.add(parent);
+                System.out.println("key" + ds.getKey());
+            }
+        }
+    }
+
+    public void retrieveSafezone(DataSnapshot dataSnapshot){
+        Boolean isDuplicate = false;
+        for (DataSnapshot wow : dataSnapshot.child(ref).child("Safezone").getChildren()) {
+            Safezone safezone = new Safezone();
+            safezone.setId(wow.getKey());
+            Location temp = new Location(wow.getKey());
+            if(wow.child("lat").getValue(Double.class) != null && wow.child("lon").getValue(Double.class)!=null
+                    && wow.child("radius").getValue(Double.class)!=null ) {
+                temp.setLatitude(wow.child("lat").getValue(Double.class));
+                temp.setLongitude(wow.child("lon").getValue(Double.class));
+                safezone.setRadius(wow.child("radius").getValue(Double.class));
+            }
+            else return;
+            safezone.setCenter(temp);
+            safezone.setName(wow.child("name").getValue(String.class));
+            System.out.println("size" + safezone_list.size());
+            for(Safezone p : safezone_list) {
+                if(safezone.getId().equals( p.getId())) isDuplicate = true;
+            }
+            if(!isDuplicate) safezone_list.add(safezone);
+        }
+    }
+
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
+    }
+
 
 
 

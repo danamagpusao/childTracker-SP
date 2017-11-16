@@ -27,7 +27,7 @@ public class MenuList extends ListActivity {
         ArrayAdapter<String> itemsAdapter =
                 new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, options);
         this.setListAdapter(itemsAdapter);
-        child_ref = getIntent().getExtras().getString("child_ref");
+        child_ref = h.getFiles("child_ref");
         System.out.println(child_ref + "<<< Child reference");
 
 
@@ -42,6 +42,7 @@ public class MenuList extends ListActivity {
                 break;
             case 1:
                 intent = new Intent(MenuList.this, SafezoneList.class);
+                intent.putExtra("child_ref", child_ref);
                 break;
             case 2:
                 intent = new Intent(MenuList.this, ParentList.class);
@@ -56,7 +57,6 @@ public class MenuList extends ListActivity {
                 h.resetDB();
                 break;
             default:
-
         }
 
 

@@ -48,16 +48,20 @@ public class childList_home extends ListActivity {
 
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                child_list.clear();
+                retrieve(dataSnapshot);
             }
 
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
-
+                child_list.clear();
                 retrieve(dataSnapshot);
             }
 
             @Override
             public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                child_list.clear();
+                retrieve(dataSnapshot);
             }
 
             @Override

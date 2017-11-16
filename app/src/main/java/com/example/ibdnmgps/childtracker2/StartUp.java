@@ -10,22 +10,25 @@ package com.example.ibdnmgps.childtracker2;
         import com.google.firebase.database.DatabaseReference;
         import com.google.firebase.database.FirebaseDatabase;
 
+        import static android.R.attr.value;
+
 public class StartUp extends AppCompatActivity {
     private ChildTrackerDatabaseHelper h;
-    private FirebaseDatabase mFirebaseInstance;
-    private  DatabaseReference db;
-    private String user_key;
+    static Boolean isInitializedDB = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(savedInstanceState != null)
+            isInitializedDB = savedInstanceState.getBoolean("isInitializedDB");
+
+        if (!isInitializedDB)
+        {
+            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+            isInitializedDB = true;
+        }
         setContentView (R.layout.activity_start_up);
-
-        db =getDatabase();
-
-
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
-
 
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
@@ -48,21 +51,13 @@ public class StartUp extends AppCompatActivity {
             }
         }, 3000);
 
-
-
     }
 
-    public DatabaseReference getDatabase() {
-        if (db == null) {
-            FirebaseDatabase database = FirebaseDatabase.getInstance();
-            database.setPersistenceEnabled(true);
-
-            return database.getReference();
-        }
-        return db;
+    @Override
+    protected void onSaveInstanceState(Bundle bundle) {
+        super.onSaveInstanceState(bundle);
+        bundle.putBoolean("isInitializedDB", isInitializedDB);
     }
-
-
 
 }
 

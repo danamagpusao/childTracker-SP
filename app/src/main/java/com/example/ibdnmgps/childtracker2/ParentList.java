@@ -161,14 +161,17 @@ public class ParentList extends ListActivity {
             }
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                first.clear();
                 retrieveParent(dataSnapshot);
             }
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
+                first.clear();
                 retrieveParent(dataSnapshot);
             }
             @Override
             public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                first.clear();
                 retrieveParent(dataSnapshot);
             }
             @Override

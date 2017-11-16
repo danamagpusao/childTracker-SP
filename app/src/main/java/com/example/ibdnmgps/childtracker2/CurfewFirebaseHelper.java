@@ -96,8 +96,7 @@ public class CurfewFirebaseHelper extends FirebaseHelper {
         if(object!=null)
         {
             try{
-                db.child("Child/" + childId + "/Curfew/").removeValue(); // deletes current curfew
-                DatabaseReference id = db.child("Child/" + childId + "/Curfew").push();
+                DatabaseReference id = db.child("Child/" + childId + "/Curfew");
                 id.child("start").setValue(object.getStart());
                 id.child("end").setValue(object.getEnd());
 

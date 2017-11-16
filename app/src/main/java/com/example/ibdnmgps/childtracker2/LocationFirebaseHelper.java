@@ -18,20 +18,44 @@ import java.util.Date;
 
 class LocationFirebaseHelper extends FirebaseHelper{
 
-    String childId;
-    ArrayList<ChildLocation> location_list = new ArrayList<>();
+    private String childId;
+    private ArrayList<ChildLocation> location_list = new ArrayList<>();
 
-    public LocationFirebaseHelper(DatabaseReference db) {
-        super(db);
-        db.keepSynced(true);
-        childId = null;
-
-    }
 
     public LocationFirebaseHelper(DatabaseReference db, String childId) {
         this.db = db;
         db.keepSynced(true);
         this.childId = childId;
+
+
+        db.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                retrieveLocationList(dataSnapshot);
+
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                retrieveLocationList(dataSnapshot);
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                retrieveLocationList(dataSnapshot);
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                retrieveLocationList(dataSnapshot);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
 
     }
 
@@ -58,9 +82,31 @@ class LocationFirebaseHelper extends FirebaseHelper{
 
     }
 
-    @Override
-    public ArrayList retrieve() {
-        return location_list;
+    public ChildLocation retrieveLatest() {
+        return location_list.get(0);
     }
 
+
+    private void retrieveLocationList(DataSnapshot dataSnapshot) {
+        if( dataSnapshot.child(childId).child("ChildLocation").getChildrenCount() >0 )
+            location_list.clear();
+        for (DataSnapshot wow : dataSnapshot.child(childId).child("ChildLocation").getChildren()) {
+            ChildLocation loc = new ChildLocation();
+            loc.setId(wow.getKey());
+            Location temp = new Location(wow.getKey());
+            if(wow.child("lat").getValue(Double.class) != null && wow.child("lon").getValue(Double.class)!=null) {
+                temp.setLatitude(wow.child("lat").getValue(Double.class));
+                temp.setLongitude(wow.child("lon").getValue(Double.class));
+            }
+            else return;
+            loc.setLocation(temp);
+            loc.setTimeCreated(wow.child("time_created").getValue(String.class));
+            location_list.add(0,loc);
+        }
+    }
+
+    @Override
+    ArrayList retrieve() {
+        return location_list;
+    }
 }

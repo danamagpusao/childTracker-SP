@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.Toast;
 
 import static com.example.ibdnmgps.childtracker2.ChildTrackerDatabaseHelper.KEY_INT_OFF;
 import static com.example.ibdnmgps.childtracker2.ChildTrackerDatabaseHelper.KEY_INT_ON;
@@ -17,7 +18,6 @@ import static com.example.ibdnmgps.childtracker2.ChildTrackerDatabaseHelper.TABL
 public class Settings extends AppCompatActivity {
     private ChildTrackerDatabaseHelper h;
     private EditText on_et;
-    private EditText off_et;
     private Switch sms;
     private Button pincode_btn;
     @Override
@@ -32,7 +32,7 @@ public class Settings extends AppCompatActivity {
         sms = (Switch) findViewById(R.id.is_sms);
         pincode_btn = (Button) findViewById(R.id.pincode_settings);
 
-        on_et.setText(h.getFiles("on"));
+        on_et.setText(Integer.parseInt(h.getFiles("on"))/60000+"");
         if(Integer.parseInt(h.getFiles("sms")) == 1) sms.setChecked(true);
         else sms.setChecked(false);
         pincode_btn.setOnClickListener(new View.OnClickListener() {
@@ -54,20 +54,20 @@ public class Settings extends AppCompatActivity {
             else values.put(ChildTrackerDatabaseHelper.KEY_OFFLINE_SEND, 0);
             h.updateChildTracker(values);
 
-            if (!h.getFiles("on").toString().equals(on_et.getText().toString())) {
-                Intent i = new Intent(getApplicationContext(), ChildTrackerService.class);
-                stopService(i);
-                startService(i);
+            if (!h.getFiles("on").equals(on_et.getText().toString())) {
+                stopService(new Intent(this, ChildTrackerService.class));
+                startService(new Intent(this, ChildTrackerService.class));
+                Toast.makeText(this, "Restart Service!", Toast.LENGTH_SHORT).show();
             }
             finish();
         }
     }
 
     public boolean validator () {
-        if(Integer.parseInt(on_et.getText().toString()) < 5) {
+        if(Double.parseDouble(on_et.getText().toString()) < 5) {
                 on_et.setError("must be atleast 5!");
             return false;
-        }
+       }
         return true;
     }
 }

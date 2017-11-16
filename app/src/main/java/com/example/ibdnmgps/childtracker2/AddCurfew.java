@@ -128,14 +128,15 @@ public class AddCurfew extends AppCompatActivity {
                                 if(minute < 10) min = "0"+minute;
                                 start_text.setText(hour + ":" + min);
                                 startTime = Calendar.getInstance();
-                                startTime.set(
-                                        startTime.get(Calendar.YEAR),
-                                        startTime.get(Calendar.MONTH),
-                                        startTime.get(Calendar.DAY_OF_MONTH),
-                                        hourOfDay,
-                                        minute,
-                                        0
-                                );
+                                startTime.setTimeInMillis(System.currentTimeMillis());
+
+                                if(minute < 15){
+                                    startTime.set(Calendar.HOUR_OF_DAY, hourOfDay-1);
+                                    startTime.set(Calendar.MINUTE, 60-15+minute);
+                                } else {
+                                    startTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                                    startTime.set(Calendar.MINUTE, minute-15);
+                                }
                             }
                         }, mHour, mMinute, false);
                 timePickerDialog.show();
@@ -155,14 +156,15 @@ public class AddCurfew extends AppCompatActivity {
                                 if(minute < 10) min = "0"+minute;
                                 end_text.setText(hour + ":" + min);
                                 endTime = Calendar.getInstance();
-                                endTime.set(
-                                        endTime.get(Calendar.YEAR),
-                                        endTime.get(Calendar.MONTH),
-                                        endTime.get(Calendar.DAY_OF_MONTH),
-                                        hourOfDay,
-                                        minute,
-                                        0
-                                );
+                                endTime.setTimeInMillis(System.currentTimeMillis());
+
+                                if(minute < 15){
+                                    endTime.set(Calendar.HOUR_OF_DAY, hourOfDay-1);
+                                    endTime.set(Calendar.MINUTE, 60-15+minute);
+                                } else {
+                                    endTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                                    endTime.set(Calendar.MINUTE, minute-15);
+                                }
                             }
                         }, mHour, mMinute, false);
                 timePickerDialog.show();
@@ -196,12 +198,12 @@ public class AddCurfew extends AppCompatActivity {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, _id, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         long futureInMillis  = 0;
         if(_id == 0)
-            futureInMillis = startTime.getTimeInMillis() - 900000; // pop up notification 15(900000) minutes before curfew start time
+            futureInMillis = startTime.getTimeInMillis(); // pop up notification 15(900000) minutes before curfew start time
         else if(_id == 1)
-            futureInMillis = endTime.getTimeInMillis() - 900000; // pop up notification 15(900000) minutes before curfew start time
+            futureInMillis = endTime.getTimeInMillis(); // pop up notification 15(900000) minutes before curfew start time
 
         AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, futureInMillis, AlarmManager.INTERVAL_DAY,pendingIntent);
+        alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, futureInMillis, AlarmManager.INTERVAL_DAY, pendingIntent);
     }
 
     private Notification getNotification(int _id) {
@@ -216,14 +218,16 @@ public class AddCurfew extends AppCompatActivity {
     }
 
     private void retrieveCurfew(DataSnapshot dataSnapshot) {
-        for (DataSnapshot wow : dataSnapshot.child(currentChildId).child("Curfew").getChildren()) {
-            curfew = new Curfew();
-            curfew.setId(wow.getKey());
-            curfew.setStart(wow.child("start").getValue(String.class));
-            curfew.setEnd(wow.child("end").getValue(String.class));
-            start_text.setText(curfew.getStart());
-            end_text.setText(curfew.getEnd());
+        for (DataSnapshot wow : dataSnapshot.child(currentChildId).getChildren()) {
+            if(wow.getKey().equals("Curfew")){
+                curfew = new Curfew();
+                curfew.setStart(wow.child("start").getValue(String.class));
+                curfew.setEnd(wow.child("end").getValue(String.class));
+                start_text.setText(curfew.getStart());
+                end_text.setText(curfew.getEnd());
+            }
             System.out.println("key" + wow.getKey());
+
         }
     }
 
