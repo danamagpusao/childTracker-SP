@@ -57,7 +57,7 @@ public class Settings extends AppCompatActivity {
             if (!h.getFiles("on").equals(on_et.getText().toString())) {
                 stopService(new Intent(this, ChildTrackerService.class));
                 startService(new Intent(this, ChildTrackerService.class));
-                Toast.makeText(this, "Restart Service!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "ChildTracker Service restarted", Toast.LENGTH_SHORT).show();
             }
             finish();
         }

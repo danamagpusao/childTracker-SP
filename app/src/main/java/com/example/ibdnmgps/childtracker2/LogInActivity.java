@@ -277,7 +277,6 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
         ContentValues values = new ContentValues();
         for (DataSnapshot ds : dataSnapshot.getChildren())
         {
-            System.out.println("OYAAAHH :: " +dataSnapshot.getKey() + " >>>" + ds.getKey());
                 if (dataSnapshot.getKey().equals("Child") && ds.getKey().equals(user.getUid())) {
                     values.put(ChildTrackerDatabaseHelper.KEY_DEVICE, "child");
                     values.put(ChildTrackerDatabaseHelper.KEY_MODE, "child");

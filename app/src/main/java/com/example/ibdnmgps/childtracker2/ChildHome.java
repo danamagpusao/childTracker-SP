@@ -217,10 +217,12 @@ public class ChildHome extends AppCompatActivity {
                 parent.setId(ds.getKey());
                 parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
                 parent.setName(ds.child("name").getValue(String.class));
+                if(ds.child("receiveSMS").getValue(Boolean.class) != null)
+                    parent.setReceiveSMS(ds.child("receiveSMS").getValue(Boolean.class));
+                else parent.setReceiveSMS(false);
                 if (!parent_list.contains(parent))
                     parent_list.add(parent);
                 System.out.println(parent.getName());
-
             }
         }
     }
@@ -321,7 +323,7 @@ public class ChildHome extends AppCompatActivity {
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-            return getLocation();
+          //  return getLocation();
         }
 
         //dangerous

@@ -14,6 +14,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.LocationServices;
@@ -49,6 +50,7 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
     private Button save_btn;
     private Marker marker;
     private EditText radius_txt;
+    private TextView radius_cur_txt;
     private Safezone safezone;
     private LatLng markerlatlng;
 
@@ -64,6 +66,7 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
         db = FirebaseDatabase.getInstance().getReference();
         isInitialized = false;
         radius_txt = (EditText) findViewById(R.id.safezone_rad);
+        radius_cur_txt = (TextView) findViewById(R.id.safezone_rad_txt);
         save_btn = (Button) findViewById(R.id.select_safezone);
         save_btn.setOnClickListener(this);
         safezone_loc = new Location("center");
@@ -71,8 +74,11 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
             save_btn.setVisibility(View.GONE);
             radius_txt.setVisibility(View.GONE);
             if(safezone == null) finish();
-        }
+        } else {
+             radius_cur_txt.setVisibility(View.GONE);
+         }
         if(safezone!=null) {
+            radius_cur_txt.setText("Radius: "+ safezone.getRadius() * 6371000 +" m");
             markerlatlng = new LatLng(safezone.getCenter().getLatitude(),safezone.getCenter().getLongitude());
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map_safezone);
@@ -184,7 +190,7 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
 
     @Override
     public void onClick(View view) {
-        if(!radius_txt.getText().toString().equals("") && Double.parseDouble(radius_txt.getText().toString()) > 0  ) {
+        if(!radius_txt.getText().toString().equals("") && Double.parseDouble(radius_txt.getText().toString()) >= 100  ) {
             safezone_loc.setLatitude(marker.getPosition().latitude);
             safezone_loc.setLongitude(marker.getPosition().longitude);
             Double radius = Double.parseDouble(radius_txt.getText().toString()) / 6371000;
@@ -193,7 +199,7 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
             h.save(safezone_temp);
             finish();
         } else {
-            radius_txt.setError("Invalid radius!");
+            radius_txt.setError("Invalid radius. Must be at least 100 meters!");
         }
     }
 }

@@ -14,19 +14,14 @@ package com.example.ibdnmgps.childtracker2;
 
 public class StartUp extends AppCompatActivity {
     private ChildTrackerDatabaseHelper h;
-    static Boolean isInitializedDB = false;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(savedInstanceState != null)
-            isInitializedDB = savedInstanceState.getBoolean("isInitializedDB");
-
-        if (!isInitializedDB)
-        {
-            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
-            isInitializedDB = true;
+        if ((getIntent().getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != 0) {
+            finish();
+            return;
         }
+
         setContentView (R.layout.activity_start_up);
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
 
@@ -53,11 +48,6 @@ public class StartUp extends AppCompatActivity {
 
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle bundle) {
-        super.onSaveInstanceState(bundle);
-        bundle.putBoolean("isInitializedDB", isInitializedDB);
-    }
 
 }
 

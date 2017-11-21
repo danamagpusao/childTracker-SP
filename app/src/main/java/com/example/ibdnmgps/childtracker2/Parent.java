@@ -16,7 +16,7 @@ public class Parent {
     protected String name;
     protected String phoneNum;
     protected String password;
-    protected int receiveSMS; // 0 false 1 true
+    protected Boolean receiveSMS;
 
     public Parent(){
 
@@ -24,10 +24,12 @@ public class Parent {
 
     public Parent(String password) {
         this.password = password;
+        this.receiveSMS = false;
     }
     public Parent(String phoneNum, String password) {
         this.phoneNum = phoneNum;
         this.password = password;
+        this.receiveSMS = false;
     }
 
     public void setId(String _id) {
@@ -45,7 +47,7 @@ public class Parent {
         this.password = password;
     }
 
-    public void setReceiveSMS(int receiveSMS) {
+    public void setReceiveSMS(boolean receiveSMS) {
         this.receiveSMS = receiveSMS;
     }
     public String getId() {
@@ -62,19 +64,10 @@ public class Parent {
         return password;
     }
 
-    public int getReceiveSMS(){
+    public boolean getReceiveSMS(){
         return receiveSMS;
     }
 
-    @Exclude
-    public Map<String, Object> toMap() {
-         HashMap<String, Object> result = new HashMap<>();
-         result.put("id", id);
-         result.put("name", name);
-         result.put("phoneNum",phoneNum);
-         result.put("password", password);
-         return result;
-     }
 
 
 

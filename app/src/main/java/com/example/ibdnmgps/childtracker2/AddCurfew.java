@@ -172,23 +172,28 @@ public class AddCurfew extends AppCompatActivity {
     }
 
     public void addCurfew(View view) {
-        Curfew curfew = new Curfew();
-        curfew.setStart(start_text.getText().toString());
-        curfew.setEnd(end_text.getText().toString());
+        if(!h.getFiles("device").equals("parent")) {
+            Curfew curfew = new Curfew();
+            curfew.setStart(start_text.getText().toString());
+            curfew.setEnd(end_text.getText().toString());
 
-        curfew.setDays(days);
-        Boolean b =helper.save(curfew);
+            curfew.setDays(days);
+            Boolean b = helper.save(curfew);
 
-        //validate if valid
-        if(b && !curfew.getStart().equals("") && !curfew.getEnd().equals("")){
-            // 0 start, 1 end
-            scheduleNotification(getNotification(0),0);
-            scheduleNotification(getNotification(1),1);
-            Toast.makeText(AddCurfew.this, "Successfully added a curfew", Toast.LENGTH_SHORT).show();
-            finish();
+            //validate if valid
+            if (b && !curfew.getStart().equals("") && !curfew.getEnd().equals("")) {
+                // 0 start, 1 end
+                scheduleNotification(getNotification(0), 0);
+                scheduleNotification(getNotification(1), 1);
+                Toast.makeText(AddCurfew.this, "Successfully added a curfew", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+            if (!b) Toast.makeText(AddCurfew.this, "DB error", Toast.LENGTH_SHORT).show();
         }
-        if(!b ) Toast.makeText(AddCurfew.this, "DB error", Toast.LENGTH_SHORT).show();
+        else {
 
+            Toast.makeText(AddCurfew.this, "Curfew can only be edited in child's device", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void scheduleNotification(Notification notification, int _id) {

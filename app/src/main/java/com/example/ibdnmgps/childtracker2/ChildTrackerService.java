@@ -2,7 +2,7 @@ package com.example.ibdnmgps.childtracker2;
 
 import android.app.Activity;
 import android.app.AlarmManager;
-import android.app.NotificationManager;
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -13,19 +13,14 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
+import android.os.StrictMode;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.NotificationCompat;
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -35,22 +30,16 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import static android.R.attr.data;
-import static android.R.attr.name;
+import static android.Manifest.permission_group.SMS;
 
 /**
  * Modified 6/30/2017 for App,
@@ -67,18 +56,17 @@ public class ChildTrackerService extends Service {
     private LocationFirebaseHelper helper;
     private String ref;
     private ChildTrackerDatabaseHelper h;
-    private ArrayList<String> parent_key_list = new ArrayList<>();
     private ArrayList<Parent> parent_list = new ArrayList<>();
     private ArrayList<Safezone> safezone_list = new ArrayList<>();
 
 
     //SMS feature
-    private int PERMISSION_SEND_SMS = 1;
     private PendingIntent sentPI, deliveredPI;
     private String SENT = "SMS_SENT";
     private String DELIVERED = "SMS_DELIVERED";
-    private BroadcastReceiver smsSentReceiver, smsDeliveredReceiver;
     private int interval;
+
+    private Calendar startCurfew, endCurfew;
 
     @Nullable
     @Override
@@ -92,17 +80,21 @@ public class ChildTrackerService extends Service {
         ref = h.getFiles("child_ref");
         db = FirebaseDatabase.getInstance().getReference();
         helper = new LocationFirebaseHelper(db,ref);
+        sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
+        deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
 
         db.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 retrieveParent(dataSnapshot);
                 retrieveSafezone(dataSnapshot);
+                retrieveCurfew(dataSnapshot);
             }
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
                 retrieveSafezone(dataSnapshot);
                 retrieveParent(dataSnapshot);
+                retrieveCurfew(dataSnapshot);
             }
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
@@ -147,48 +139,6 @@ public class ChildTrackerService extends Service {
         };
         interval = Integer.parseInt(h.getFiles("on"));
         setLocationManager();
-
-        smsSentReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                switch (getResultCode()) {
-                    case Activity.RESULT_OK:
-                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Sent", Toast.LENGTH_SHORT).show();
-                        break;
-                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Generic Failure", Toast.LENGTH_SHORT).show();
-                        break;
-                    case SmsManager.RESULT_ERROR_NO_SERVICE:
-                        Toast.makeText(ChildTrackerService.this, "SMS Location Update No Service", Toast.LENGTH_SHORT).show();
-                        break;
-                    case SmsManager.RESULT_ERROR_NULL_PDU:
-                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Null PDU", Toast.LENGTH_SHORT).show();
-                        break;
-                    case SmsManager.RESULT_ERROR_RADIO_OFF:
-                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Radio Off", Toast.LENGTH_SHORT).show();
-                        break;
-
-                }
-            }
-        };
-
-        smsDeliveredReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                switch (getResultCode()) {
-                    case Activity.RESULT_OK:
-                        Toast.makeText(ChildTrackerService.this, "SMS Location Update Delivered", Toast.LENGTH_SHORT).show();
-                        break;
-                    case Activity.RESULT_CANCELED:
-                        Toast.makeText(ChildTrackerService.this, "SMS Location Update not Delivered", Toast.LENGTH_SHORT).show();
-                        break;
-
-                }
-            }
-        };
-
-        registerReceiver(smsSentReceiver, new IntentFilter(SENT));
-        registerReceiver(smsDeliveredReceiver, new IntentFilter(DELIVERED));
     }
 
     private void setLocationManager() {
@@ -206,25 +156,31 @@ public class ChildTrackerService extends Service {
     }
 
     public void sendSMS(ArrayList<Parent> list, ChildLocation loc) {
-        if(Integer.parseInt(h.getFiles("sms")) == 1 )
-        for(Parent p : list) {
-            sendToParent(p.getPhoneNum(),
-                    "Location Update ("+loc.getTimeCreated() +"): \n" +
-                    "Child ID:" + ref + "\n" +
-                    "lat:" + loc.getLocation().getLatitude() +"\n" +
-                    "long:" + loc.getLocation().getLongitude()
+        if(Integer.parseInt(h.getFiles("sms")) == 1 ) {
+            if(list.isEmpty()) System.out.println("Parent list EMPTY!");
+            for (Parent p : list) {
+                if (p.getReceiveSMS()) {
+                    sendToParent(p.getPhoneNum(),
+                            "Location Update (" + loc.getTimeCreated() + "): \n" +
+                                    "Child ID:" + ref + "\n" +
+                                    "lat:" + loc.getLocation().getLatitude() + "\n" +
+                                    "long:" + loc.getLocation().getLongitude()
                     );
+
+                    System.out.println("SENDING SMS TO " + p.getPhoneNum());
+                }
+            }
+        } else {
+            System.out.println("SMS Update disabled");
         }
     }
 
     private void sendToParent(String number, String message) {
-        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS)
-                !=  PackageManager.PERMISSION_GRANTED){
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Sending SMS permission declined");
         }
-        SmsManager sms =  SmsManager.getDefault();
-        sms.sendTextMessage(number,null,
-               message, null, null);
-
+        SmsManager.getDefault().sendTextMessage(number, null, message, sentPI, deliveredPI);
     }
 
 
@@ -236,10 +192,24 @@ public class ChildTrackerService extends Service {
             SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy h:mm:ss a");
             String formattedDate = sdf.format(date);
             child_loc.setTimeCreated(formattedDate);
-            if(helper.save(child_loc)!= null)
+            if(helper.save(child_loc)!= null) {
                 System.out.println("saved to DB");
+            }
             if(!isNetworkAvailable()){ // sends SMS if internet connection is not available
                 sendSMS(parent_list,child_loc);
+            }
+
+            Calendar cal = Calendar.getInstance();
+            if(cal.get(Calendar.HOUR_OF_DAY) == startCurfew.get(Calendar.HOUR_OF_DAY) &&
+                    cal.get(Calendar.MINUTE) == startCurfew.get(Calendar.MINUTE)){
+                scheduleNotification(getNotification(0),0);
+            }
+            if(cal.get(Calendar.HOUR_OF_DAY) == endCurfew.get(Calendar.HOUR_OF_DAY) &&
+                    cal.get(Calendar.MINUTE) == endCurfew.get(Calendar.MINUTE)){
+                scheduleNotification(getNotification(1),1);
+            }
+            if(cal.getTime().after(startCurfew.getTime()) && cal.getTime().before(endCurfew.getTime()) ){
+                scheduleNotification(getNotification(2),2);
             }
         }
     }
@@ -247,18 +217,15 @@ public class ChildTrackerService extends Service {
     private boolean checkSafeZone(Location location) {
         //checks if distance is within safezone radius
         Boolean bool= false;
-        //TestingOnlyRemove
-        if(safezone_list.isEmpty()) {
-            Toast.makeText(ChildTrackerService.this, "no safezone", Toast.LENGTH_SHORT).show();
-        }
         //checks if safezone-location distance is within atleast one safezone radius
         for(Safezone s : safezone_list) {
             Location temp = new Location("safezone");
             temp.setLatitude(s.getCenter().getLatitude());
             temp.setLongitude(s.getCenter().getLongitude());
-            if(getDistance(location,temp) <= s.getRadius()) bool = true;
-
-            Toast.makeText(ChildTrackerService.this, getDistance(location,temp) + "vs" + s.getRadius() , Toast.LENGTH_SHORT).show();
+            if(Double.compare(getDistance(location,temp),s.getRadius())<=0) {
+                bool = true;
+            }
+            System.out.println( "isSafezone?"+ bool + " " + getDistance(location,temp) + " vs " + s.getRadius() );
         }
         return bool;
     }
@@ -272,9 +239,6 @@ public class ChildTrackerService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(smsDeliveredReceiver);
-        unregisterReceiver(smsSentReceiver);
-
         if(locationManager != null){
             //noinspection MissingPermission
             locationManager.removeUpdates(listener);
@@ -283,32 +247,39 @@ public class ChildTrackerService extends Service {
 
 
     private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null;
+        int SDK_INT = android.os.Build.VERSION.SDK_INT;
+        if (SDK_INT > 8)
+        {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+                    .permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
+        boolean success = false;
+        try {
+            URL url = new URL("https://google.com");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(10000);
+            connection.connect();
+            success = connection.getResponseCode() == 200;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return success;
     }
 
-    public void retrieveParent(DataSnapshot dataSnapshot){
+    private void retrieveParent(DataSnapshot dataSnapshot) {
         for (DataSnapshot ds : dataSnapshot.getChildren()) {
-            if (ds.getKey().equals(ref)) { //belongs to current child
-                parent_key_list.clear();
-                for (DataSnapshot wow : ds.child("parents").getChildren()) {
-                    if (!parent_key_list.contains(wow.getKey()))
-                        parent_key_list.add(wow.getKey());
-                }
-            }
-        }
-        parent_list.clear();
-        for (DataSnapshot ds : dataSnapshot.getChildren()) {
-            if (parent_key_list.contains(ds.getKey())) {
+            if (dataSnapshot.getKey().equals("Parent") && ds.child("children/" + ref).getValue() != null) {
                 Parent parent = new Parent();
                 parent.setId(ds.getKey());
                 parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
                 parent.setName(ds.child("name").getValue(String.class));
-                parent.setPassword(ds.child("password").getValue(String.class));
-                parent_list.add(parent);
-                System.out.println("key" + ds.getKey());
+                if(ds.child("receiveSMS").getValue(Boolean.class) != null)
+                    parent.setReceiveSMS(ds.child("receiveSMS").getValue(Boolean.class));
+                else parent.setReceiveSMS(false);
+                if (!parent_list.contains(parent))
+                    parent_list.add(parent);
+                System.out.println(parent.getName());
             }
         }
     }
@@ -328,7 +299,6 @@ public class ChildTrackerService extends Service {
             else return;
             safezone.setCenter(temp);
             safezone.setName(wow.child("name").getValue(String.class));
-            System.out.println("size" + safezone_list.size());
             for(Safezone p : safezone_list) {
                 if(safezone.getId().equals( p.getId())) isDuplicate = true;
             }
@@ -336,9 +306,62 @@ public class ChildTrackerService extends Service {
         }
     }
 
+    private void retrieveCurfew(DataSnapshot dataSnapshot) {
+        for (DataSnapshot wow : dataSnapshot.child(ref).getChildren()) {
+            if (wow.getKey().equals("Curfew")) {
+                Curfew curfew = new Curfew();
+                curfew.setStart(wow.child("start").getValue(String.class));
+                curfew.setEnd(wow.child("end").getValue(String.class));
+
+                startCurfew = setCalendar(curfew.getStart());
+                endCurfew = setCalendar(curfew.getEnd());
+
+            }
+        }
+    }
+
+    private Calendar setCalendar(String time){
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(System.currentTimeMillis());
+        String[] string = time.split(":");
+        if(Integer.parseInt(string[1]) < 15){
+            cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(string[0])-1);
+            cal.set(Calendar.MINUTE, 60-15+Integer.parseInt(string[1]));
+        } else {
+            cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(string[0]));
+            cal.set(Calendar.MINUTE, Integer.parseInt(string[1])-15);
+        }
+        return cal;
+    }
+
+    private void scheduleNotification(Notification notification, int _id) {
+        Intent notificationIntent = new Intent(this, NotificationPublisher.class);
+        notificationIntent.putExtra(NotificationPublisher.NOTIFICATION_ID, _id);
+        notificationIntent.putExtra(NotificationPublisher.NOTIFICATION, notification);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, _id, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        long futureInMillis  = System.currentTimeMillis();
+        AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, futureInMillis, pendingIntent);
+    }
+
+    private Notification getNotification(int _id) {
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setContentTitle("Curfew");
+        if(_id == 0)
+            builder.setContentText("15 minutes before curfew");
+        else if(_id == 1)
+            builder.setContentText("15 minutes before end of curfew");
+        else if(_id==2)
+            builder.setContentText("CURFEW TIME!");
+        builder.setSmallIcon(R.mipmap.logo_round);
+        return builder.build();
+    }
+
     public int onStartCommand(Intent intent, int flags, int startId) {
         return START_STICKY;
     }
+
+
 
 
 

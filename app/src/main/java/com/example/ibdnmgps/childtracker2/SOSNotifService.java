@@ -92,34 +92,7 @@ public class SOSNotifService extends Service {
             public void onCancelled(DatabaseError databaseError) {
             }
         });
-
         System.out.println("SOSNotifService Started --- ");
-
-        SmsReceiver.bindListener(new SmsListener() {
-            @Override
-            public void messageReceived(String messageText) {
-
-                //From the received text string you may do string operations to get the required OTP
-                //It depends on your SMS format
-                Log.e("Message",messageText);
-                Toast.makeText(SOSNotifService.this,"Message: "+messageText,Toast.LENGTH_LONG).show();
-
-                // If your OTP is six digits number, you may use the below code
-
-                Pattern distance_pattern = Pattern.compile("[1-9]{1,}\\.[1-9]{1,}");
-                Matcher matcher = distance_pattern.matcher(messageText);
-                String otp;
-                while (matcher.find())
-                {
-                    otp = matcher.group();
-                }
-
-
-
-
-            }
-        });
-
     }
 
     public void promptSOS(final DataSnapshot mainData) {
@@ -139,53 +112,55 @@ public class SOSNotifService extends Service {
                     name = dataSnapshot.child("name").getValue(String.class);
                     Location loc = new Location("GPS");
                     if (dataSnapshot.child("ChildLocation").child(loc_ref).getValue() != null && mainData.child("loc_ref") != null) {
-                        loc.setLatitude(dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lat").getValue(double.class));
-                        loc.setLongitude(dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lon").getValue(double.class));
-
-                        String timestamp = dataSnapshot.child("ChildLocation")
-                                .child(mainData.child("loc_ref")
-                                .getValue(String.class) + "/time_created")
-                                .getValue(String.class);
-
-                        //todo create push notif here
-                        android.support.v4.app.NotificationCompat.Builder mBuilder =
-                                new NotificationCompat.Builder(SOSNotifService.this)
-                                        .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark_normal)
-                                        .setContentTitle("SOS")
-                                        .setContentText(name + " sent you an SOS("+
-                                                timestamp+")!")
-                                        .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
+                        if(dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lat").getValue(double.class) != null &&
+                                dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lon").getValue(double.class) != null) {
+                            loc.setLatitude(dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lat").getValue(double.class));
+                            loc.setLongitude(dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lon").getValue(double.class));
 
 
-                        Intent resultIntent = new Intent(SOSNotifService.this, ViewMap.class);
-                        resultIntent.putExtra("location", loc);
-                        resultIntent.putExtra("child_ref", child_ref);
+                            String timestamp = dataSnapshot.child("ChildLocation")
+                                    .child(mainData.child("loc_ref")
+                                            .getValue(String.class) + "/time_created")
+                                    .getValue(String.class);
 
-                        PendingIntent resultPendingIntent =
-                                PendingIntent.getActivity(
-                                        SOSNotifService.this,
-                                        (int) System.currentTimeMillis(),
-                                        resultIntent,
-                                        PendingIntent.FLAG_UPDATE_CURRENT
-                                );
+                            //todo create push notif here
+                            android.support.v4.app.NotificationCompat.Builder mBuilder =
+                                    new NotificationCompat.Builder(SOSNotifService.this)
+                                            .setSmallIcon(R.mipmap.logo_round)
+                                            .setContentTitle("SOS")
+                                            .setContentText(name + " sent you an SOS(" +
+                                                    timestamp + ")!")
+                                            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
 
-                        mBuilder.setContentIntent(resultPendingIntent);
 
-                        NotificationManager mNotifyMgr =
-                                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                        mNotifyMgr.notify(001, mBuilder.build());
+                            Intent resultIntent = new Intent(SOSNotifService.this, ViewMap.class);
+                            resultIntent.putExtra("location", loc);
+                            resultIntent.putExtra("child_ref", child_ref);
 
-                        db.child(mainData.getKey() + "/received/" + ref).setValue(true);
+                            PendingIntent resultPendingIntent =
+                                    PendingIntent.getActivity(
+                                            SOSNotifService.this,
+                                            (int) System.currentTimeMillis(),
+                                            resultIntent,
+                                            PendingIntent.FLAG_UPDATE_CURRENT
+                                    );
+
+                            mBuilder.setContentIntent(resultPendingIntent);
+
+                            NotificationManager mNotifyMgr =
+                                    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                            mNotifyMgr.notify(001, mBuilder.build());
+
+                            db.child(mainData.getKey() + "/received/" + ref).setValue(true);
+                        }
                     }
                 }
 
                 @Override
                 public void onCancelled(DatabaseError databaseError) {
-
                 }
             });
         }
-
     }
 
 

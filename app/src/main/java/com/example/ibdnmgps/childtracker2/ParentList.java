@@ -190,6 +190,7 @@ public class ParentList extends ListActivity {
                     dOTP.setError("Cannot be empty.");
                     return;
                 }else if(pac != null) {
+                    saveBtn.setVisibility(View.GONE);
                     signInWithPhoneAuthCredential(pac);
                 } else verifyPhoneNumberWithCode(mVerificationId, code);
             }
@@ -219,6 +220,7 @@ public class ParentList extends ListActivity {
 
         oDelete = (Button) dialog.findViewById(R.id.parent_options_delete);
         oSwitch = (Switch)  dialog.findViewById(R.id.parent_options_switch);
+        oSwitch.setChecked(first.get(position).getReceiveSMS());
 
         oDelete.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -226,8 +228,6 @@ public class ParentList extends ListActivity {
                 helper.remove(first.get(position).getId(),h.getFiles("child_ref").toString());
                 first.remove(position);
                 adapter.notifyDataSetChanged();
-
-
             }
         });
 
@@ -235,8 +235,7 @@ public class ParentList extends ListActivity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 Parent p = first.get(position);
-                if(compoundButton.isChecked()) p.setReceiveSMS(1);
-                else p.setReceiveSMS(0);
+                p.setReceiveSMS(compoundButton.isChecked());
                 helper.update(p);
 
             }
@@ -268,6 +267,7 @@ public class ParentList extends ListActivity {
                     parent.setId(ds.getKey());
                     parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
                     parent.setName(ds.child("name").getValue(String.class));
+                    parent.setReceiveSMS(ds.child("receiveSMS").getValue(Boolean.class));
                     boolean isDuplicate = false;
                     for(Parent p : first) {
                         if(parent.getPhoneNum().toString().equals( p.getPhoneNum().toString())) isDuplicate = true;
@@ -327,6 +327,7 @@ public class ParentList extends ListActivity {
         object.setName(parent_name);
         object.setPhoneNum(parent_number);
         object.setId(parent_id);
+        object.setReceiveSMS(false);
 
         ParentFirebaseHelper helper = new ParentFirebaseHelper(db);
         if(!helper.save(object).equals("")){
