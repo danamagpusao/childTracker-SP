@@ -20,7 +20,8 @@
             android:background="@drawable/common_google_signin_btn_icon_light_normal_background"
             android:orientation="horizontal"
             tools:layout_editor_absoluteX="8dp"
-            tools:layout_editor_absoluteY="0dp">
+            tools:layout_editor_absoluteY="0dp"
+            android:weightSum="1">
 
             <TextView
                 android:id="@+id/textView14"
@@ -33,34 +34,9 @@
 
             <EditText
                 android:id="@+id/on_int"
-                android:layout_width="55dp"
-                android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="number" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/common_google_signin_btn_icon_light_normal_background"
-            android:orientation="horizontal"
-            android:weightSum="1">
-
-            <TextView
-                android:id="@+id/textView15"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:text="@string/settings_time_off"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                android:textSize="18sp" />
-
-            <EditText
-                android:id="@+id/off_int"
-                android:layout_width="49dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.05"
+                android:layout_weight="0.83"
                 android:ems="10"
                 android:inputType="number" />
 

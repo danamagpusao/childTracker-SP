@@ -2,8 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.ibdnmgps.childtracker2">
 
+    <uses-library android:name="com.google.android.maps" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -14,8 +16,11 @@
     <uses-permission android:name="android.permission.READ_PROFILE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.provider.Telephony.SMS_RECEIVED" />
+
 
     <application
         android:allowBackup="true"
@@ -78,7 +83,9 @@
         <activity android:name=".LogInActivity" />
         <activity android:name=".UserInfoActivity" />
         <activity android:name=".ChildLock" />
-        <activity android:name=".EditPincode"></activity>
+        <activity android:name=".EditPincode" />
+        <activity android:name=".SafeZoneSelection"></activity>
+
     </application>
 
 </manifest>

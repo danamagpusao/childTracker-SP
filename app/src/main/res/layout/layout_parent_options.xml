@@ -8,7 +8,7 @@
     android:weightSum="1">
 
     <Button
-        android:id="@+id/button8"
+        android:id="@+id/parent_options_delete"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/common_google_signin_btn_icon_light_normal_background"
@@ -18,7 +18,7 @@
         android:textSize="18sp" />
 
     <Switch
-        android:id="@+id/switch1"
+        android:id="@+id/parent_options_switch"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/common_google_signin_btn_icon_light_normal_background"

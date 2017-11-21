@@ -1,0 +1,60 @@
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:map="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/map_safezone"
+    android:name="com.google.android.gms.maps.SupportMapFragment"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.ibdnmgps.childtracker2.SafeZoneSelection"
+    android:layout_alignParentTop="true"
+    android:layout_alignParentStart="true" />
+
+    <Button
+        android:id="@+id/select_safezone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/colorPrimary"
+        android:text="@string/common_save"
+        android:textColor="@color/cardview_light_background"
+        android:layout_marginEnd="77dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true" />
+
+    <EditText
+        android:id="@+id/safezone_rad"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/common_google_signin_btn_text_light_normal_background"
+        android:backgroundTint="@color/cardview_light_background"
+        android:ems="10"
+        android:hint="@string/ss_radius"
+        android:inputType="numberDecimal"
+        android:padding="10dp"
+        android:textAlignment="viewStart"
+        android:textSize="18sp"
+        android:layout_alignParentBottom="true"
+        android:layout_toStartOf="@+id/select_safezone" />
+
+    <TextView
+        android:id="@+id/safezone_rad_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/common_google_signin_btn_icon_light_normal_background"
+        android:gravity="center"
+        android:text="TextView"
+        android:textColor="@color/common_google_signin_btn_text_dark_focused"
+        android:textSize="18sp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true" />
+
+</RelativeLayout>
