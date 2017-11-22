@@ -227,6 +227,9 @@ public class ParentList extends ListActivity {
             public void onClick(View view) {
                 helper.remove(first.get(position).getId(),h.getFiles("child_ref").toString());
                 first.remove(position);
+                stopService(new Intent(ParentList.this, ChildTrackerService.class));
+                startService(new Intent(ParentList.this, ChildTrackerService.class));
+                finish();
                 adapter.notifyDataSetChanged();
             }
         });
@@ -332,7 +335,12 @@ public class ParentList extends ListActivity {
         ParentFirebaseHelper helper = new ParentFirebaseHelper(db);
         if(!helper.save(object).equals("")){
             Boolean addChild =  helper.addChild(user.getUid(), currentChildId);
-            if(addChild) Toast.makeText(this,"Parent added successfully",Toast.LENGTH_SHORT);
+            if(addChild){
+                Toast.makeText(this,"Parent added successfully",Toast.LENGTH_SHORT);
+                stopService(new Intent(this, ChildTrackerService.class));
+                startService(new Intent(this, ChildTrackerService.class));
+                finish();
+            }
             else  Toast.makeText(this,"Cannot add Parent!",Toast.LENGTH_SHORT);
         } else{
             Log.d(TAG,"FirebaseDatabase_AddParent:Failed");

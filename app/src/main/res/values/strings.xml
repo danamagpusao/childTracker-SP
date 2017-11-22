@@ -47,6 +47,7 @@
     <string name="addParent_password">Enter Password</string>
     <string name="addParent_confirm_password">Confirm Password</string>
     <string name="addParent_new_parent">New User? </string>
+    <string name="addParent_title">Add Parent</string>
 
 
     <!-- Activity Add Safezone !-->
@@ -65,15 +66,14 @@
     <string name="childInformation_location">Recent Locations</string>
 
     <!-- Activity Enter Password !-->
-    <string name="enterPassword_reminder">!! Only parent can access this feature</string>
+    <string name="enterPassword_reminder">Only parent can access this feature</string>
 
     <!-- Layout Parent options !-->
     <string name="parentOptions_Delete">Delete</string>
     <string name="parentOptions_SMS">Receive SMS Updates</string>
 
     <!-- Activity Settings !-->
-    <string name="settings_time_on">Time Interval (Online):</string>
-    <string name="settings_time_off">Time Interval (Offline):</string>
+    <string name="settings_time_on">Location Update Interval(min):</string>
     <string name="settings_sms">Send location updates via SMS</string>
     <string name="settings_pincode">Change Pincode (default: 1234)</string>
 
@@ -106,13 +106,28 @@
     <string name="title_activity_parent_login">Sign in</string>
 
     <!-- Edit Pincode -->
+    <string name="edit_pincode_curpincode">Current Pincode</string>
     <string name="edit_pincode_newpincode">New Pincode</string>
     <string name="edit_pincode_confirm">Confirm New Pincode</string>
     <string name="edit_pincode_isSendSMS">Prompt parent/s on pincode update?</string>
 
+    <!-- Safezone Selection -->
+    <string name="ss_radius">radius(m) </string>
+    <string name="safezoneOptions_view">View in Map</string>
+    <string name="lon">Longitude</string>
+    <string name="lat">Latitude</string>
+    <string name="manual_view">View</string>
+
+    <!-- Child Home -->
+    <string name="ch_reminder">Hold for 5 seconds to activate</string>
+    <string name="ch_warning_label">Warning:</string>
+    <string name="ch_warning">By activating, all parents will
+        receive an SOS notification and SMS message labelled as emergency.</string>
 
 
     <string name="child_lock_text">Enter 4-digit pincode to continue</string>
+
+    <string name="parent_list_title">All tracked children</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

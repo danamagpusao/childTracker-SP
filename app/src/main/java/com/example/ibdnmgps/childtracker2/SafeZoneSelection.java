@@ -1,5 +1,6 @@
 package com.example.ibdnmgps.childtracker2;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Location;
@@ -78,7 +79,7 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
              radius_cur_txt.setVisibility(View.GONE);
          }
         if(safezone!=null) {
-            radius_cur_txt.setText("Radius: "+ safezone.getRadius() * 6371000 +" m");
+            radius_cur_txt.setText("Radius: "+ safezone.getRadius() +" m");
             markerlatlng = new LatLng(safezone.getCenter().getLatitude(),safezone.getCenter().getLongitude());
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map_safezone);
@@ -184,7 +185,6 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
             }
         });
 
-
     }
 
 
@@ -193,10 +193,12 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
         if(!radius_txt.getText().toString().equals("") && Double.parseDouble(radius_txt.getText().toString()) >= 100  ) {
             safezone_loc.setLatitude(marker.getPosition().latitude);
             safezone_loc.setLongitude(marker.getPosition().longitude);
-            Double radius = Double.parseDouble(radius_txt.getText().toString()) / 6371000;
+            Double radius = Double.parseDouble(radius_txt.getText().toString());
             Safezone safezone_temp = new Safezone(safezone_loc, radius);
             SafezoneFirebaseHelper h = new SafezoneFirebaseHelper(db, child_ref);
             h.save(safezone_temp);
+            stopService(new Intent(this, ChildTrackerService.class));
+            startService(new Intent(this, ChildTrackerService.class));
             finish();
         } else {
             radius_txt.setError("Invalid radius. Must be at least 100 meters!");

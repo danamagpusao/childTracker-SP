@@ -31,7 +31,7 @@ public class SafezoneList extends ListActivity implements View.OnClickListener{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_safezone_list);
-        db = FirebaseDatabase.getInstance().getReference();
+        db = Utils.getDatabase().getReference();
         add_btn = (FloatingActionButton) findViewById(R.id.safezone_list_add_btn);
         adapter = new SafezoneAdapter(this, R.layout.layout_safezone_list, safezone_list);
         this.setListAdapter(adapter);
@@ -118,6 +118,8 @@ public class SafezoneList extends ListActivity implements View.OnClickListener{
                         helper.remove(child_ref,safezone_list.get(position).getId());
                         adapter.notifyDataSetChanged();
                         finish();
+                        stopService(new Intent(SafezoneList.this, ChildTrackerService.class));
+                        startService(new Intent(SafezoneList.this, ChildTrackerService.class));
                         break;
 
                     case R.id.safezone_options_view:

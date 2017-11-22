@@ -125,8 +125,8 @@ public class LocationList extends ListActivity {
             System.out.println("key" + wow.getKey());
             System.out.println("lat:" + loc.getLocation().getLatitude());
             System.out.println("long:" + loc.getLocation().getLongitude());
-            if(location_list.size()>20)
-                location_list.subList(20, location_list.size()).clear();
+            if(location_list.size()>50)
+                location_list.subList(50, location_list.size()).clear();
         }
         adapter.notifyDataSetChanged();
 

@@ -55,7 +55,7 @@ public class AddCurfew extends AppCompatActivity {
             currentChildId = getIntent().getExtras().get("child_ref").toString();
         }
         System.out.println("user keyyyy!" + currentChildId);
-        db = FirebaseDatabase.getInstance().getReference();
+        db = Utils.getDatabase().getReference();
         helper = new CurfewFirebaseHelper(db,currentChildId);
         db.addChildEventListener(new ChildEventListener() {
             @Override
@@ -179,16 +179,11 @@ public class AddCurfew extends AppCompatActivity {
 
             curfew.setDays(days);
             Boolean b = helper.save(curfew);
-
-            //validate if valid
-            if (b && !curfew.getStart().equals("") && !curfew.getEnd().equals("")) {
-                // 0 start, 1 end
-                scheduleNotification(getNotification(0), 0);
-                scheduleNotification(getNotification(1), 1);
-                Toast.makeText(AddCurfew.this, "Successfully added a curfew", Toast.LENGTH_SHORT).show();
-                finish();
-            }
             if (!b) Toast.makeText(AddCurfew.this, "DB error", Toast.LENGTH_SHORT).show();
+            else {
+                stopService(new Intent(this, ChildTrackerService.class));
+                startService(new Intent(this, ChildTrackerService.class));
+            }
         }
         else {
 
@@ -196,31 +191,6 @@ public class AddCurfew extends AppCompatActivity {
         }
     }
 
-    private void scheduleNotification(Notification notification, int _id) {
-        Intent notificationIntent = new Intent(this, NotificationPublisher.class);
-        notificationIntent.putExtra(NotificationPublisher.NOTIFICATION_ID, _id);
-        notificationIntent.putExtra(NotificationPublisher.NOTIFICATION, notification);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, _id, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        long futureInMillis  = 0;
-        if(_id == 0)
-            futureInMillis = startTime.getTimeInMillis(); // pop up notification 15(900000) minutes before curfew start time
-        else if(_id == 1)
-            futureInMillis = endTime.getTimeInMillis(); // pop up notification 15(900000) minutes before curfew start time
-
-        AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, futureInMillis, AlarmManager.INTERVAL_DAY, pendingIntent);
-    }
-
-    private Notification getNotification(int _id) {
-        Notification.Builder builder = new Notification.Builder(this);
-        builder.setContentTitle("Curfew");
-        if(_id == 0)
-            builder.setContentText("15 minutes before curfew");
-        else if(_id == 1)
-            builder.setContentText("15 minutes before end of curfew");
-        builder.setSmallIcon(R.mipmap.logo_round);
-        return builder.build();
-    }
 
     private void retrieveCurfew(DataSnapshot dataSnapshot) {
         for (DataSnapshot wow : dataSnapshot.child(currentChildId).getChildren()) {

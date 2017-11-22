@@ -28,11 +28,8 @@ import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static java.sql.DriverManager.println;
 
 /**
  * 7/7/2017
@@ -40,21 +37,17 @@ import java.util.regex.Pattern;
  */
 public class SOSNotifService extends Service {
 
+    private final String TAG = "SOSNotifService";
     private LocationListener listener;
     private LocationManager locationManager;
 
-    private DatabaseReference db,maindb;
-    private LocationFirebaseHelper helper;
+    private DatabaseReference db;
     private String ref;
     private ChildTrackerDatabaseHelper h;
 
 
     NotificationCompat.Builder mBuilder;
-    private String child_ref;
-    private String loc_ref;
-    String name;
-    String phone_num;
-    Boolean result = false;
+
 
 
     @Nullable
@@ -65,14 +58,11 @@ public class SOSNotifService extends Service {
 
     @Override
     public void onCreate() {
+
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
         ref = h.getFiles("child_ref");
-        maindb = FirebaseDatabase.getInstance().getReference();
-        db = FirebaseDatabase.getInstance().getReference("SOS");
-        helper = new LocationFirebaseHelper(db,ref);
+        db = Utils.getDatabase().getReference("SOS");
         mBuilder = new NotificationCompat.Builder(this);
-        loc_ref = null;
-        child_ref = null;
 
         db.addChildEventListener(new ChildEventListener() {
             @Override
@@ -81,86 +71,63 @@ public class SOSNotifService extends Service {
             }
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                promptSOS(dataSnapshot);
             }
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
+                promptSOS(dataSnapshot);
             }
             @Override
             public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                promptSOS(dataSnapshot);
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {
             }
         });
-        System.out.println("SOSNotifService Started --- ");
     }
 
     public void promptSOS(final DataSnapshot mainData) {
-        if(mainData.child("received/"+ref).getValue() == null) {
-            loc_ref = mainData.child("loc_ref").getValue(String.class);
-            child_ref = mainData.child("child_ref").getValue(String.class);
-            if (child_ref == null) mainData.child("child_reference").getValue(String.class);
+        final String child_ref = mainData.child("child_ref").getValue(String.class);
+        final String child_name = mainData.child("child_name").getValue(String.class);
+        final Double loc_lat = mainData.child("loc_lat").getValue(Double.class);
+        final Double loc_long = mainData.child("loc_long").getValue(Double.class);
+        final String loc_time = mainData.child("time_created").getValue(String.class);
+        final String parent_ref = mainData.child("parent_ref").getValue(String.class);
+        if(child_ref != null && parent_ref != null && parent_ref.equals(ref)) {
+            Log.v(TAG,"New SOS Message");
+            Location loc = new Location("GPS");
+            loc.setLatitude(loc_lat);
+            loc.setLongitude(loc_long);
 
-            for (DataSnapshot mini : mainData.getChildren()) {
-                System.out.println(mini.getValue(String.class) + " " + mini.getKey());
-            }
-            System.out.println("SOS NOTIF SERVICE " + child_ref + " " + loc_ref);
-            final DatabaseReference child_fb = FirebaseDatabase.getInstance().getReference("Child/" + child_ref);
-            child_fb.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    name = dataSnapshot.child("name").getValue(String.class);
-                    Location loc = new Location("GPS");
-                    if (dataSnapshot.child("ChildLocation").child(loc_ref).getValue() != null && mainData.child("loc_ref") != null) {
-                        if(dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lat").getValue(double.class) != null &&
-                                dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lon").getValue(double.class) != null) {
-                            loc.setLatitude(dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lat").getValue(double.class));
-                            loc.setLongitude(dataSnapshot.child("ChildLocation").child(mainData.child("loc_ref").getValue(String.class) + "/lon").getValue(double.class));
-
-
-                            String timestamp = dataSnapshot.child("ChildLocation")
-                                    .child(mainData.child("loc_ref")
-                                            .getValue(String.class) + "/time_created")
-                                    .getValue(String.class);
-
-                            //todo create push notif here
-                            android.support.v4.app.NotificationCompat.Builder mBuilder =
-                                    new NotificationCompat.Builder(SOSNotifService.this)
-                                            .setSmallIcon(R.mipmap.logo_round)
-                                            .setContentTitle("SOS")
-                                            .setContentText(name + " sent you an SOS(" +
-                                                    timestamp + ")!")
-                                            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
+            android.support.v4.app.NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(SOSNotifService.this)
+                            .setSmallIcon(R.mipmap.logo_round)
+                            .setContentTitle("SOS")
+                            .setContentText(child_name + " sent you an SOS(" +
+                                    loc_time + ")!")
+                            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
 
 
-                            Intent resultIntent = new Intent(SOSNotifService.this, ViewMap.class);
-                            resultIntent.putExtra("location", loc);
-                            resultIntent.putExtra("child_ref", child_ref);
+            Intent resultIntent = new Intent(SOSNotifService.this, ViewMap.class);
+            resultIntent.putExtra("location", loc);
+            resultIntent.putExtra("child_ref", child_ref);
 
-                            PendingIntent resultPendingIntent =
-                                    PendingIntent.getActivity(
-                                            SOSNotifService.this,
-                                            (int) System.currentTimeMillis(),
-                                            resultIntent,
-                                            PendingIntent.FLAG_UPDATE_CURRENT
-                                    );
+            PendingIntent resultPendingIntent =
+                    PendingIntent.getActivity(
+                            SOSNotifService.this,
+                            (int) System.currentTimeMillis(),
+                            resultIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                    );
 
-                            mBuilder.setContentIntent(resultPendingIntent);
-
-                            NotificationManager mNotifyMgr =
-                                    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                            mNotifyMgr.notify(001, mBuilder.build());
-
-                            db.child(mainData.getKey() + "/received/" + ref).setValue(true);
-                        }
-                    }
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                }
-            });
+            mBuilder.setContentIntent(resultPendingIntent);
+            NotificationManager mNotifyMgr =
+                    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            mNotifyMgr.notify(001, mBuilder.build());
+            db.child(mainData.getKey()).removeValue();
         }
+
     }
 
 
@@ -178,9 +145,9 @@ public class SOSNotifService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i("SOSNotifService", "Received start id " + startId + ": " + intent);
-        return START_STICKY;
+        return Service.START_STICKY;
     }
+
 
 
 }

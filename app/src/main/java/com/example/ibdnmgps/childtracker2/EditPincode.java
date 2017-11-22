@@ -21,6 +21,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -32,7 +33,7 @@ import java.util.ArrayList;
 public class EditPincode extends AppCompatActivity {
 
     private Button ok_btn;
-    private EditText pincode;
+    private EditText pincode,cur_pincode;
     private EditText confirm;
     private CheckBox checkbox;
     private ChildTrackerDatabaseHelper h;
@@ -57,7 +58,9 @@ public class EditPincode extends AppCompatActivity {
         ok_btn = (Button) findViewById(R.id.ep_ok);
         pincode = (EditText) findViewById(R.id.ep_pincode);
         confirm = (EditText) findViewById(R.id.ep_confirm);
+        cur_pincode = (EditText) findViewById(R.id.ep_cur_pincode);
         checkbox = (CheckBox) findViewById(R.id.ep_checkbox);
+
 
         sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT),0);
         deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED),0);
@@ -91,14 +94,19 @@ public class EditPincode extends AppCompatActivity {
 
     public void savePincode(View view) {
         //check if pincode and confirm are equal
-        if(!pincode.getText().toString().equals(confirm.getText().toString())){
-            confirm.setError("pincode does not match!");
-        } else {
-            DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    switch (which){
-                        case DialogInterface.BUTTON_POSITIVE:
+        if(!cur_pincode.getText().toString().equals(h.getFiles("pin_code"))) cur_pincode.setError("Wrong pincode!");
+        else if(!pincode.getText().toString().equals(confirm.getText().toString())){
+            confirm.setError("Pincode does not match!");
+        }else if(pincode.getText().toString().length() != 4){
+            confirm.setError("Must be 4 digit number!");
+        }
+        else {
+            new AlertDialog.Builder(this)
+                    .setTitle("Change pin code")
+                    .setMessage("Do you really want to change pin code?")
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
                             ContentValues values = new ContentValues();
                             values.put(ChildTrackerDatabaseHelper.KEY_PIN_CODE, pincode.getText().toString());
                             h.updateChildTracker(values);
@@ -110,19 +118,8 @@ public class EditPincode extends AppCompatActivity {
                                     Toast.makeText(EditPincode.this, "No Parent!", Toast.LENGTH_SHORT).show();
                             }
                             finish();
-                            break;
-
-                        case DialogInterface.BUTTON_NEGATIVE:
-                            break;
-                    }
-                }
-            };
-            AlertDialog.Builder alert = new AlertDialog.Builder(EditPincode.this);
-            alert.setTitle("Confirm");
-            alert.setMessage("Change pincode?");
-            alert.setPositiveButton("OK",dialogClickListener);
-            alert.setNegativeButton("Cancel",dialogClickListener);
-            alert.show();
+                        }})
+                    .setNegativeButton(android.R.string.no, null).show();
         }
     }
 

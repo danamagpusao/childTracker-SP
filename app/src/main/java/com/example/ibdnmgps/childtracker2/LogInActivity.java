@@ -71,7 +71,7 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
 
         //initializes Firebase Authentication
         mAuth = FirebaseAuth.getInstance();
-        db= FirebaseDatabase.getInstance().getReference();
+        db= Utils.getDatabase().getReference();
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
         stored = new ArrayList<DataSnapshot>();
         //get reference on the UI components

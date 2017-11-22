@@ -13,6 +13,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -26,6 +27,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -40,7 +43,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.example.ibdnmgps.childtracker2.R.id.textView;
 
 public class ChildHome extends AppCompatActivity {
     private BroadcastReceiver broadcastReceiver;
@@ -57,50 +59,37 @@ public class ChildHome extends AppCompatActivity {
     private BroadcastReceiver smsSentReceiver, smsDeliveredReceiver;
     private Button sosBtn;
     private Boolean mBooleanIsPressed;
+    private String name;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_child_home);
-        db = FirebaseDatabase.getInstance().getReference();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        db = Utils.getDatabase().getReference();
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
         ref = h.getFiles("child_ref");
         helper = new LocationFirebaseHelper(db, ref);
 
+        if (user != null) {
+            name = user.getDisplayName();
+        } else name="childId" + ref;
+
+
         sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
         deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
         sosBtn = (Button) findViewById(R.id.sosBtn);
-
-        sosBtn.setOnTouchListener(new View.OnTouchListener() {
-            private final Handler handler = new Handler();
-            private final Runnable runnable = new Runnable() {
-                public void run() {
-                    if (mBooleanIsPressed) {
-                        SOS();
-                    }
-                }
-            };
-
-
+        sosBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    // Execute your Runnable after 5000 milliseconds = 5 seconds.
-//After this 5secs it will check if is pressed
-                    handler.postDelayed(runnable, 5000);
-                    mBooleanIsPressed = true;
-                }
-
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    if (mBooleanIsPressed) {
-                        mBooleanIsPressed = false;
-                        handler.removeCallbacks(runnable);
-                    }
-                }
-                return false;
+            public void onClick(View view) {
+                Toast.makeText(ChildHome.this,"Location Manager not yet initialized", Toast.LENGTH_SHORT);
             }
         });
+
+
+
 
 
         db.addChildEventListener(new ChildEventListener() {
@@ -132,7 +121,39 @@ public class ChildHome extends AppCompatActivity {
         if (!runtime_permissions()) {
             Intent i = new Intent(getApplicationContext(), ChildTrackerService.class);
             startService(i);
-            locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+            if(locationManager==null)
+                locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+
+            sosBtn.setOnTouchListener(new View.OnTouchListener() {
+                private final Handler handler = new Handler();
+                private final Runnable runnable = new Runnable() {
+                    public void run() {
+                        if (mBooleanIsPressed) {
+                            SOS();
+                        }
+                    }
+                };
+
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        // Execute your Runnable after 5000 milliseconds = 5 seconds.
+//After this 5secs it will check if is pressed
+                        handler.postDelayed(runnable, 5000);
+                        mBooleanIsPressed = true;
+                    }
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        if (mBooleanIsPressed) {
+                            mBooleanIsPressed = false;
+                            handler.removeCallbacks(runnable);
+                        }
+                    }
+                    return false;
+                }
+            });
+
+            sosBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.button_style));
         }
 
     }
@@ -149,7 +170,6 @@ public class ChildHome extends AppCompatActivity {
             requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.SEND_SMS}, 100);
             return true;
         }
-
         return false;
     }
 
@@ -176,19 +196,12 @@ public class ChildHome extends AppCompatActivity {
         //trigger SMS
         try {
             //trigger SMS
-            if (!parent_list.isEmpty());
-                for (Parent p : parent_list)
+            if (!parent_list.isEmpty())
+                for (Parent p : parent_list) {
                     sendSMS(p, child_loc);
+                    if(location!= null)sendSOSNotif(p.getId(), ref, child_loc);
+                }
         } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        //save to firebase
-        try {
-              DatabaseReference sos = db.child("SOS").push();
-              sos.child("child_ref").setValue(ref);
-              sos.child("loc_ref").setValue(loc_ref);
-        } catch (DatabaseException e) {
             e.printStackTrace();
         }
 
@@ -202,11 +215,31 @@ public class ChildHome extends AppCompatActivity {
         }
 
         SmsManager sms = SmsManager.getDefault();
-        sms.sendTextMessage(parent.getPhoneNum(), null,
-                "SOS MESSAGE (" + child_loc.getTimeCreated() + "\n" +
-                        "Lat:" + child_loc.getLocation().getLatitude() +
-                        "\n Long:" + child_loc.getLocation().getLongitude(), sentPI, deliveredPI);
+        if(child_loc.getLocation() != null) {
+            sms.sendTextMessage(parent.getPhoneNum(), null,
+                    "SOS MESSAGE (" + child_loc.getTimeCreated() + "\n" +
+                            "Lat:" + child_loc.getLocation().getLatitude() +
+                            "\n Long:" + child_loc.getLocation().getLongitude(), sentPI, deliveredPI);
+        } else {
+            sms.sendTextMessage(parent.getPhoneNum(), null,
+                    "SOS MESSAGE (" + child_loc.getTimeCreated() + "\n" +
+                            "Cannot retrieve current child location", sentPI, deliveredPI);
+        }
 
+    }
+    private void sendSOSNotif(String parent_ref, String child_ref, ChildLocation loc ){
+        //save to firebase
+        try {
+            DatabaseReference sos = db.child("SOS").push();
+            sos.child("child_ref").setValue(child_ref);
+            sos.child("child_name").setValue(name);
+            sos.child("parent_ref").setValue(parent_ref);
+            sos.child("loc_lat").setValue(loc.getLocation().getLatitude());
+            sos.child("loc_long").setValue(loc.getLocation().getLongitude());
+            sos.child("time_created").setValue(loc.getTimeCreated());
+        } catch (DatabaseException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -327,9 +360,8 @@ public class ChildHome extends AppCompatActivity {
         }
 
         //dangerous
-        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        if(location != null)  return location;
-        else return getLocation();
+        if(locationManager == null) return null;
+        else return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
     }
 

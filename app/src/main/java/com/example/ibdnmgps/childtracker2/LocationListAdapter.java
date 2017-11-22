@@ -14,8 +14,6 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.ibdnmgps.childtracker2.R.id.textView;
-import static java.security.AccessController.getContext;
 
 
 public class LocationListAdapter extends ArrayAdapter<ChildLocation>{

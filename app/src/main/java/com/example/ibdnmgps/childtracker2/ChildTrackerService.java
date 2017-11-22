@@ -15,6 +15,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.StrictMode;
@@ -32,6 +33,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -65,7 +67,7 @@ public class ChildTrackerService extends Service {
     private String SENT = "SMS_SENT";
     private String DELIVERED = "SMS_DELIVERED";
     private int interval;
-
+    private static boolean isSetAlarm = false;
     private Calendar startCurfew, endCurfew;
 
     @Nullable
@@ -78,10 +80,11 @@ public class ChildTrackerService extends Service {
     public void onCreate() {
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
         ref = h.getFiles("child_ref");
-        db = FirebaseDatabase.getInstance().getReference();
+        db = Utils.getDatabase().getReference();
         helper = new LocationFirebaseHelper(db,ref);
         sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
         deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
+
 
         db.addChildEventListener(new ChildEventListener() {
             @Override
@@ -200,16 +203,13 @@ public class ChildTrackerService extends Service {
             }
 
             Calendar cal = Calendar.getInstance();
-            if(cal.get(Calendar.HOUR_OF_DAY) == startCurfew.get(Calendar.HOUR_OF_DAY) &&
-                    cal.get(Calendar.MINUTE) == startCurfew.get(Calendar.MINUTE)){
-                scheduleNotification(getNotification(0),0);
-            }
-            if(cal.get(Calendar.HOUR_OF_DAY) == endCurfew.get(Calendar.HOUR_OF_DAY) &&
-                    cal.get(Calendar.MINUTE) == endCurfew.get(Calendar.MINUTE)){
-                scheduleNotification(getNotification(1),1);
-            }
+            cal.set(Calendar.HOUR_OF_DAY, Calendar.HOUR_OF_DAY);
+            cal.set(Calendar.MINUTE, Calendar.MINUTE);
             if(cal.getTime().after(startCurfew.getTime()) && cal.getTime().before(endCurfew.getTime()) ){
-                scheduleNotification(getNotification(2),2);
+                System.out.println("curfew timee");
+                scheduleNotification(getNotification(2),2,System.currentTimeMillis()+5000);
+            } else {
+                System.out.println("not curfew timee");
             }
         }
     }
@@ -222,7 +222,7 @@ public class ChildTrackerService extends Service {
             Location temp = new Location("safezone");
             temp.setLatitude(s.getCenter().getLatitude());
             temp.setLongitude(s.getCenter().getLongitude());
-            if(Double.compare(getDistance(location,temp),s.getRadius())<=0) {
+            if(BigDecimal.valueOf(getDistance(location,temp)).compareTo(BigDecimal.valueOf(s.getRadius())) <= 0)  {
                 bool = true;
             }
             System.out.println( "isSafezone?"+ bool + " " + getDistance(location,temp) + " vs " + s.getRadius() );
@@ -231,9 +231,16 @@ public class ChildTrackerService extends Service {
     }
 
     private Double getDistance(Location location, Location safezone) {
-        double latDis = location.getLatitude() - safezone.getLatitude();
-        double lonDis = location.getLongitude() - safezone.getLongitude();
-        return Math.sqrt((latDis * latDis) + (lonDis * lonDis));
+        Double lat1 = deg2rad(location.getLatitude());
+        Double lat2 = deg2rad(safezone.getLatitude());
+        Double latDis = deg2rad(safezone.getLatitude() - location.getLatitude());
+        Double lonDis = deg2rad(safezone.getLongitude() - location.getLongitude());
+        double a = (Math.sin(latDis/2) * Math.sin(latDis/2)) + (Math.cos(lat1) * Math.cos(lat2) * Math.sin(lonDis/2) * Math.sin(lonDis/2));
+        return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    private Double deg2rad(double deg) {
+        return deg * (Math.PI/180);
     }
 
     @Override
@@ -316,6 +323,13 @@ public class ChildTrackerService extends Service {
                 startCurfew = setCalendar(curfew.getStart());
                 endCurfew = setCalendar(curfew.getEnd());
 
+                System.out.println(startCurfew.get(Calendar.HOUR_OF_DAY) +":" + startCurfew.get(Calendar.MINUTE));
+                System.out.println(endCurfew.get(Calendar.HOUR_OF_DAY) +":" + endCurfew.get(Calendar.MINUTE));
+                if(!isSetAlarm){
+                    scheduleNotification(getNotification(0),0,startCurfew.getTimeInMillis());
+                    scheduleNotification(getNotification(1),1,endCurfew.getTimeInMillis());
+                    isSetAlarm = true;
+                }
             }
         }
     }
@@ -331,17 +345,27 @@ public class ChildTrackerService extends Service {
             cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(string[0]));
             cal.set(Calendar.MINUTE, Integer.parseInt(string[1])-15);
         }
+        if(System.currentTimeMillis()> cal.getTimeInMillis())
+            cal.add(Calendar.DATE, 1);
         return cal;
     }
 
-    private void scheduleNotification(Notification notification, int _id) {
+    private void scheduleNotification(Notification notification, int _id, long time) {
         Intent notificationIntent = new Intent(this, NotificationPublisher.class);
         notificationIntent.putExtra(NotificationPublisher.NOTIFICATION_ID, _id);
         notificationIntent.putExtra(NotificationPublisher.NOTIFICATION, notification);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, _id, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        long futureInMillis  = System.currentTimeMillis();
         AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, futureInMillis, pendingIntent);
+        if(_id == 2){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent);
+             } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, time, pendingIntent);
+            }
+        }
+        else alarmManager.setExact(AlarmManager.RTC_WAKEUP, time, pendingIntent);
+
+        System.out.println(">>> set alarm " + _id);
     }
 
     private Notification getNotification(int _id) {
@@ -360,10 +384,6 @@ public class ChildTrackerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         return START_STICKY;
     }
-
-
-
-
 
 
 

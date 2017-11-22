@@ -40,7 +40,7 @@ public class UserInfoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_info);
 
-        db =  FirebaseDatabase.getInstance().getReference();
+        db =  Utils.getDatabase().getReference();
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
 
 
@@ -137,6 +137,7 @@ public class UserInfoActivity extends AppCompatActivity {
             object.setName(name);
             object.setPhoneNum(user.getPhoneNumber());
             object.setId(user.getUid());
+            object.setReceiveSMS(false);
 
             ParentFirebaseHelper helper = new ParentFirebaseHelper(db);
             if (!helper.save(object).equals("")) {

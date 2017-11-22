@@ -9,8 +9,6 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import static com.example.ibdnmgps.childtracker2.R.id.textView;
-import static java.security.AccessController.getContext;
 
 /**
  * Created by ibdnmgps on 6/28/2017.

@@ -1,9 +1,13 @@
 package com.example.ibdnmgps.childtracker2;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
@@ -51,19 +55,30 @@ public class MenuList extends ListActivity {
                 intent = new Intent(MenuList.this, Settings.class);
                 break;
             case 4:
-                intent = new Intent(MenuList.this,LogInActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                FirebaseAuth.getInstance().signOut();
-                h.resetDB();
-                break;
+                new AlertDialog.Builder(this)
+                        .setTitle("Log Out")
+                        .setMessage("Do you really want to Log Out?")
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                stopService(new Intent(MenuList.this, ChildTrackerService.class));
+                                FirebaseAuth.getInstance().signOut();
+                                h.resetDB();
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                    finishAndRemoveTask();
+                                } else {
+                                    finishAffinity();
+                                }
+                            }})
+                        .setNegativeButton(android.R.string.no, null).show();
+                return;
             default:
         }
 
-
         startActivity(intent);
-        if(position == 4) {
-           finish();
-        }
+
+
+
 
     }
 
