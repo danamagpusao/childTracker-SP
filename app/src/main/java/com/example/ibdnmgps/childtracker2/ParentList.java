@@ -362,7 +362,7 @@ public class ParentList extends ListActivity {
     }
 
     private boolean validatePhoneNumber() {
-        phoneNum =  dCCp.getSelectedCountryCodeWithPlus() + dPhoneNum.getText().toString().substring(1);
+        phoneNum =  dCCp.getSelectedCountryCodeWithPlus() + dPhoneNum.getText().toString();
         if(TextUtils.isEmpty(phoneNum))  {
             dPhoneNum.setError("Phone number cannot be empty!");
             return false;

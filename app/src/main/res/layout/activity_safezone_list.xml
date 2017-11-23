@@ -8,13 +8,24 @@
 
     <ListView
         android:id="@+id/android:list"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="475dp"
         android:cacheColorHint="@color/common_google_signin_btn_text_dark_default"
         android:clickable="true"
         android:theme="@style/Theme.AppCompat"
         tools:layout_editor_absoluteX="8dp"
-        tools:layout_editor_absoluteY="10dp" />
+        tools:layout_editor_absoluteY="8dp"
+        />
+
+    <TextView android:id="@android:id/empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/darker_gray"
+        android:textColor="@android:color/background_light"
+        android:gravity="center"
+        android:text="@string/empty_safezone_list"
+        tools:layout_editor_absoluteY="8dp"
+        tools:layout_editor_absoluteX="8dp" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/safezone_list_add_btn"
@@ -24,14 +35,28 @@
         android:layout_margin="@dimen/fab_margin"
         android:layout_marginBottom="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
         android:clickable="false"
-        android:foregroundTint="@color/common_google_signin_btn_text_dark_pressed"
         android:tint="@color/cardview_light_background"
         app:backgroundTint="@color/colorPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:srcCompat="@drawable/plus_png" />
+
+    <TextView
+        android:id="@+id/mode"
+        android:layout_width="458dp"
+        android:layout_height="20dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:background="@android:color/holo_orange_light"
+        android:text="@string/common_child_mode"
+        android:textAlignment="center"
+        android:textColor="@color/common_google_signin_btn_text_dark_default"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp" />
 
 
 </android.support.constraint.ConstraintLayout>

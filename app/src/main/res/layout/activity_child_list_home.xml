@@ -6,6 +6,16 @@
     android:layout_height="match_parent"
     tools:context="com.example.ibdnmgps.childtracker2.childList_home">
 
+    <TextView android:id="@android:id/empty"
+        android:layout_width="0dp"
+        android:layout_height="495dp"
+        android:background="@android:color/darker_gray"
+        android:textColor="@android:color/background_light"
+        android:gravity="center"
+        android:text="@string/empty_child_list"
+        tools:layout_editor_absoluteY="8dp"
+        tools:layout_editor_absoluteX="8dp" />
+
 
     <TextView
         android:id="@+id/textView20"

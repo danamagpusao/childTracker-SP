@@ -8,6 +8,7 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.SystemClock;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -102,6 +103,11 @@ public class AddCurfew extends AppCompatActivity {
         endTime = Calendar.getInstance();
 
         System.out.println(currentChildId + "<<< add curfew child id");
+        if(h.getFiles("device").equals("parent")){
+            TextView mode = (TextView) findViewById(R.id.device_mode_add_curfew);
+            mode.setBackgroundColor(ContextCompat.getColor(this,android.R.color.holo_purple));
+            mode.setText(getString(R.string.common_parent_mode));
+        }
 
     }
 

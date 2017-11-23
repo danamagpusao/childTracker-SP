@@ -6,23 +6,6 @@
     android:layout_height="match_parent"
     tools:context="com.example.ibdnmgps.childtracker2.ChildHome">
 
-    <ImageButton
-        android:id="@+id/imageButton3"
-        android:layout_width="53dp"
-        android:layout_height="44dp"
-        android:layout_marginBottom="456dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:background="@drawable/menu_ch"
-        android:backgroundTint="?attr/colorPrimary"
-        android:onClick="gotoMenu"
-        android:tint="@color/colorPrimary"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        tools:layout_editor_absoluteX="299dp" />
-
     <Button
         android:id="@+id/sosBtn"
         android:layout_width="254dp"
@@ -42,7 +25,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.372" />
+        app:layout_constraintVertical_bias="0.245" />
 
 
     <TextView
@@ -103,4 +86,24 @@
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginLeft="8dp"
         app:layout_constraintLeft_toLeftOf="parent" />
+
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="72dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="@android:color/holo_purple"
+        android:onClick="gotoMenu"
+        android:text="@string/childhome_menu"
+        android:textColor="@color/cardview_light_background"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        tools:layout_editor_absoluteX="280dp" />
 </android.support.constraint.ConstraintLayout>

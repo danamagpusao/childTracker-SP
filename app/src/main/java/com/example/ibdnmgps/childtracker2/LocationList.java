@@ -28,9 +28,6 @@ public class LocationList extends ListActivity {
     ChildTrackerDatabaseHelper h;
     DatabaseReference db;
     ArrayList<ChildLocation> location_list = new ArrayList<>();
-    String[] itemname ={
-            "No location yet",
-    };
     String child_ref;
     LocationListAdapter adapter;
     FloatingActionButton fa;
@@ -129,7 +126,6 @@ public class LocationList extends ListActivity {
                 location_list.subList(50, location_list.size()).clear();
         }
         adapter.notifyDataSetChanged();
-
 
     }
 

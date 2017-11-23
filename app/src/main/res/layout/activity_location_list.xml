@@ -8,11 +8,22 @@
 
     <ListView
         android:id="@+id/android:list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:layout_editor_absoluteX="8dp" />
+
+
+    <TextView android:id="@android:id/empty"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:layout_editor_absoluteX="3dp"
-        tools:layout_editor_absoluteY="-3dp" />
+        android:background="@android:color/darker_gray"
+        android:textColor="@android:color/background_light"
+        android:gravity="center"
+        android:text="@string/empty_location_list"
+        tools:layout_editor_absoluteY="8dp"
+        tools:layout_editor_absoluteX="8dp" />
+
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/location_list_view"

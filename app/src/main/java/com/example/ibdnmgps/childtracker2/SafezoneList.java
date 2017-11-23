@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.location.Location;
 import android.support.design.widget.FloatingActionButton;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.ChildEventListener;
@@ -79,6 +81,12 @@ public class SafezoneList extends ListActivity implements View.OnClickListener{
         });
         if(h.getFiles("device").equals("parent")) add_btn.setVisibility(View.GONE);
         else add_btn.setOnClickListener(this);
+
+        if(h.getFiles("device").equals("parent")){
+            TextView mode = (TextView) findViewById(R.id.mode);
+            mode.setBackgroundColor(ContextCompat.getColor(this,android.R.color.holo_purple));
+            mode.setText(getString(R.string.common_parent_mode));
+        }
     }
 
     public void retrieveSafezone(DataSnapshot dataSnapshot){

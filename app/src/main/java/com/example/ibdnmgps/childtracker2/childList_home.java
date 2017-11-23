@@ -40,7 +40,7 @@ public class childList_home extends ListActivity {
         setContentView(R.layout.activity_child_list_home);
 
         //setup database
-        db= Utils.getDatabase().getReference();
+        db= Utils.getDatabase().getReference("");
         helper=new ChildFirebaseHelper(db);
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
         user_key = h.getFiles("child_ref"); //todo user_ref
