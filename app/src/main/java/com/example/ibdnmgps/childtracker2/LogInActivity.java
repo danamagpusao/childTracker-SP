@@ -185,7 +185,7 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private boolean validatePhoneNumber() {
-        phoneNumber =  liCcp.getSelectedCountryCodeWithPlus() + liPhoneNum.getText().toString().substring(1);
+        phoneNumber =  liCcp.getSelectedCountryCodeWithPlus() + liPhoneNum.getText().toString();
         if(TextUtils.isEmpty(phoneNumber))  {
             liPhoneNum.setError("Phone number cannot be empty!");
             return false;
