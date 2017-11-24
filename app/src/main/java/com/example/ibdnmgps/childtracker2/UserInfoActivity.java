@@ -92,6 +92,7 @@ public class UserInfoActivity extends AppCompatActivity {
                 values.put(ChildTrackerDatabaseHelper.KEY_DEVICE, type);
                 values.put(ChildTrackerDatabaseHelper.KEY_MODE, type);
                 values.put(ChildTrackerDatabaseHelper.KEY_CHILD_REF, user.getUid());
+                values.put(ChildTrackerDatabaseHelper.KEY_CHILD_NAME, user.getDisplayName());
                 h.updateChildTracker(values);
             } else if(type.equals("parent")){
                 Log.d(TAG,"Parent:in");
@@ -99,6 +100,7 @@ public class UserInfoActivity extends AppCompatActivity {
                 values.put(ChildTrackerDatabaseHelper.KEY_DEVICE, type);
                 values.put(ChildTrackerDatabaseHelper.KEY_MODE, type);
                 values.put(ChildTrackerDatabaseHelper.KEY_CHILD_REF, user.getUid());
+                values.put(ChildTrackerDatabaseHelper.KEY_CHILD_NAME, user.getDisplayName());
                 h.updateChildTracker(values);
             }
         }

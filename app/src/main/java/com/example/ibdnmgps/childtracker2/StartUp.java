@@ -23,13 +23,13 @@ public class StartUp extends AppCompatActivity {
         }
 
         setContentView (R.layout.activity_start_up);
-        h = new ChildTrackerDatabaseHelper(getApplicationContext());
 
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 Intent intent  = new Intent(StartUp.this, LogInActivity.class);
+                h = new ChildTrackerDatabaseHelper(getApplicationContext());
                 String type = h.getFiles("device");
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                 if (user != null) {

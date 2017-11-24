@@ -88,7 +88,7 @@ public class ParentList extends ListActivity {
 
         //initializes dialog components
         d  = new Dialog(this);
-        d.setTitle("Add Parent");
+        d.setTitle("");
         d.setContentView(R.layout.add_parent_dialog);
         dPhoneNum = (EditText) d.findViewById(R.id.parent_num);
         dOTP = (EditText) d.findViewById(R.id.addParent_otp);
@@ -229,6 +229,7 @@ public class ParentList extends ListActivity {
                 first.remove(position);
                 stopService(new Intent(ParentList.this, ChildTrackerService.class));
                 startService(new Intent(ParentList.this, ChildTrackerService.class));
+                Toast.makeText(ParentList.this, "ChildTracker Service restarted", Toast.LENGTH_SHORT).show();
                 finish();
                 adapter.notifyDataSetChanged();
             }
@@ -263,6 +264,8 @@ public class ParentList extends ListActivity {
     }
 
     private void retrieveParent(DataSnapshot dataSnapshot) {
+        if(dataSnapshot.child(currentChildId).child("Parent").getChildrenCount() > 0)
+            first.clear();
         for (DataSnapshot ds : dataSnapshot.getChildren())
         {
                 if(dataSnapshot.getKey().equals("Parent") && ds.child("children/"+currentChildId).getValue() != null) {
@@ -271,12 +274,7 @@ public class ParentList extends ListActivity {
                     parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
                     parent.setName(ds.child("name").getValue(String.class));
                     parent.setReceiveSMS(ds.child("receiveSMS").getValue(Boolean.class));
-                    boolean isDuplicate = false;
-                    for(Parent p : first) {
-                        if(parent.getPhoneNum().toString().equals( p.getPhoneNum().toString())) isDuplicate = true;
-                    }
-                    if(!isDuplicate) first.add(parent);
-                    System.out.println(parent.getName());
+                    first.add(parent);
 
                 }
             adapter.notifyDataSetChanged();
@@ -322,7 +320,7 @@ public class ParentList extends ListActivity {
     }
 
     private void addParentToDB(FirebaseUser user) {
-        String parent_name = (user.getDisplayName() == null) ? "Jane Doe":user.getDisplayName();
+        String parent_name = (user.getDisplayName() == null) ? user.getPhoneNumber():user.getDisplayName();
         String parent_number = user.getPhoneNumber();
         String parent_id = user.getUid();
 
@@ -339,6 +337,7 @@ public class ParentList extends ListActivity {
                 Toast.makeText(this,"Parent added successfully",Toast.LENGTH_SHORT);
                 stopService(new Intent(this, ChildTrackerService.class));
                 startService(new Intent(this, ChildTrackerService.class));
+                Toast.makeText(this, "ChildTracker Service restarted", Toast.LENGTH_SHORT).show();
                 finish();
             }
             else  Toast.makeText(this,"Cannot add Parent!",Toast.LENGTH_SHORT);

@@ -90,7 +90,8 @@ public class SafezoneList extends ListActivity implements View.OnClickListener{
     }
 
     public void retrieveSafezone(DataSnapshot dataSnapshot){
-        Boolean isDuplicate = false;
+        if(dataSnapshot.child(child_ref).child("Safezone").getChildrenCount() > 0)
+            safezone_list.clear();
         for (DataSnapshot wow : dataSnapshot.child(child_ref).child("Safezone").getChildren()) {
             Safezone safezone = new Safezone();
             safezone.setId(wow.getKey());
@@ -103,13 +104,8 @@ public class SafezoneList extends ListActivity implements View.OnClickListener{
             }
             else return;
             safezone.setCenter(temp);
-
             safezone.setName(wow.child("name").getValue(String.class));
-            System.out.println("sizee" + safezone_list.size());
-            for(Safezone p : safezone_list) {
-                if(safezone.getId().equals( p.getId())) isDuplicate = true;
-            }
-            if(!isDuplicate) safezone_list.add(safezone);
+            safezone_list.add(safezone);
             adapter.notifyDataSetChanged();
         }
     }

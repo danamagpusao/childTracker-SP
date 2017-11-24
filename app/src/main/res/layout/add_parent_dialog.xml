@@ -54,7 +54,7 @@
         android:layout_marginRight="10dp"
         android:layout_marginTop="0dp"
         android:ems="10"
-        android:hint="@string/add_child_num"
+        android:hint="@string/aci_phone_num"
         android:inputType="phone"
         android:singleLine="true" />
 

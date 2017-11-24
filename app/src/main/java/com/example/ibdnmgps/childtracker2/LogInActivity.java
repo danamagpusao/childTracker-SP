@@ -281,12 +281,14 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
                     values.put(ChildTrackerDatabaseHelper.KEY_DEVICE, "child");
                     values.put(ChildTrackerDatabaseHelper.KEY_MODE, "child");
                     values.put(ChildTrackerDatabaseHelper.KEY_CHILD_REF, user.getUid());
+                    values.put(ChildTrackerDatabaseHelper.KEY_CHILD_NAME, user.getDisplayName());
                     h.updateChildTracker(values);
                     return "child";
                 } else if (dataSnapshot.getKey().equals("Parent") && ds.getKey().equals(user.getUid())) {
                     values.put(ChildTrackerDatabaseHelper.KEY_DEVICE, "parent");
                     values.put(ChildTrackerDatabaseHelper.KEY_MODE, "parent");
                     values.put(ChildTrackerDatabaseHelper.KEY_CHILD_REF, user.getUid());
+                    values.put(ChildTrackerDatabaseHelper.KEY_CHILD_NAME, user.getDisplayName());
                     h.updateChildTracker(values);
                     return "parent";
                 }

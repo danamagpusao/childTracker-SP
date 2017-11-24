@@ -1,9 +1,13 @@
 package com.example.ibdnmgps.childtracker2;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Location;
+import android.location.LocationManager;
+import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -54,16 +58,16 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
     private TextView radius_cur_txt;
     private Safezone safezone;
     private LatLng markerlatlng;
+    private LocationManager locationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_safe_zone_selection);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         child_ref = getIntent().getExtras().getString("child_ref");
         safezone = getIntent().getExtras().getParcelable("safezone");
         String choice = getIntent().getExtras().getString("choice");
-        System.out.println("Child_ref >>>>>>" + child_ref);
+
         db = FirebaseDatabase.getInstance().getReference();
         isInitialized = false;
         radius_txt = (EditText) findViewById(R.id.safezone_rad);
@@ -119,32 +123,53 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
     }
 
     private void retrieveLocationList(DataSnapshot dataSnapshot) {
-        if(dataSnapshot.child(child_ref).child("SafeZone").getChildrenCount() > 0){
-            location_list.clear();
-            for (DataSnapshot wow : dataSnapshot.child(child_ref).child("ChildLocation").getChildren()) {
-                if(wow.child("lat").getValue(Double.class)!= null && wow.child("lon").getValue(Double.class)!= null) {
-                    LatLng loc = new LatLng(wow.child("lat").getValue(Double.class), wow.child("lon").getValue(Double.class));
-                    location_list.add(0, loc);
-                }
-            }
-            markerlatlng = location_list.get(0);
-        }
-        else {
-            if (dataSnapshot.child(child_ref).child("ChildLocation").getChildrenCount() > 0)
+        if(dataSnapshot.child(child_ref).child("SafeZone") != null){
+            if(dataSnapshot.child(child_ref).child("SafeZone").getChildrenCount() > 0)
                 location_list.clear();
-            for (DataSnapshot wow : dataSnapshot.child(child_ref).child("ChildLocation").getChildren()) {
-                if(wow.child("lat").getValue(Double.class)!= null && wow.child("lon").getValue(Double.class)!= null) {
-                    LatLng loc = new LatLng(wow.child("lat").getValue(Double.class), wow.child("lon").getValue(Double.class));
-                    location_list.add(0, loc);
+
+                for (DataSnapshot wow : dataSnapshot.child(child_ref).child("SafeZone").getChildren()) {
+                    if(wow.child("lat").getValue(Double.class)!= null && wow.child("lon").getValue(Double.class)!= null) {
+                        LatLng loc = new LatLng(wow.child("lat").getValue(Double.class), wow.child("lon").getValue(Double.class));
+                        location_list.add(0, loc);
+                    }
+                }
+                if(!location_list.isEmpty())
+                    markerlatlng = location_list.get(0);
+
+        }
+        else if(dataSnapshot.child(child_ref).child("ChildLocation")!=null) {
+                if (dataSnapshot.child(child_ref).child("ChildLocation").getChildrenCount() > 0)
+                    location_list.clear();
+                for (DataSnapshot wow : dataSnapshot.child(child_ref).child("ChildLocation").getChildren()) {
+                    if(wow.child("lat").getValue(Double.class)!= null && wow.child("lon").getValue(Double.class)!= null) {
+                        LatLng loc = new LatLng(wow.child("lat").getValue(Double.class), wow.child("lon").getValue(Double.class));
+                        location_list.add(0, loc);
+                    }
+                }
+            if(!location_list.isEmpty())
+                markerlatlng = location_list.get(0);
+
+        }
+        if(markerlatlng == null){
+            if (!runtime_permissions()) {
+                Intent i = new Intent(getApplicationContext(), ChildTrackerService.class);
+                startService(i);
+                if (locationManager == null)
+                    locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+
+                Location loc = getLocation();
+                if(loc == null) {
+                    markerlatlng = new LatLng(14.651489,121.049309);
+                } else {
+                    markerlatlng = new LatLng(loc.getLatitude(), loc.getLongitude());
                 }
             }
-            markerlatlng = location_list.get(0);
         }
-        if (!location_list.isEmpty() && !isInitialized) {
+        if (!isInitialized) {
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map_safezone);
             mapFragment.getMapAsync(this);
-        }
+        } else finish();
 
     }
 
@@ -155,11 +180,11 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(markerlatlng,15));
         mo = new MarkerOptions()
                 .position(markerlatlng)
-                .title("safezone_center");
+                .title("Drag and drop me!");
         if(safezone == null)mo.draggable(true);
         if(marker == null)
             marker =  mMap.addMarker(mo);
-
+        marker.showInfoWindow();
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker arg0) {
@@ -184,6 +209,35 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
                 marker = arg0;
             }
         });
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 100) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+
+            } else {
+                runtime_permissions();
+            }
+        }
+    }
+    private boolean runtime_permissions() {
+        if (Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
+            return true;
+        }
+        return false;
+    }
+
+    private Location getLocation() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        }
+
+        //dangerous
+        if(locationManager == null) return null;
+        else return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
     }
 

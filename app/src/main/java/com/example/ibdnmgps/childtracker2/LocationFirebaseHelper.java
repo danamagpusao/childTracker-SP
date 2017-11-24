@@ -12,6 +12,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import static android.R.attr.id;
+
 /**
  * Created by ibdnmgps on 7/7/2017.
  */
@@ -82,8 +84,15 @@ class LocationFirebaseHelper extends FirebaseHelper{
 
     }
 
-    public ChildLocation retrieveLatest() {
-        return location_list.get(0);
+    public Boolean delete(ChildLocation loc, String childId)
+    {
+        try{
+            db.child("Child/" + childId + "/ChildLocation/"+loc.getId()).removeValue();
+            return true;
+        }catch(DatabaseException e){
+            e.printStackTrace();
+        }
+        return false;
     }
 
 
@@ -102,6 +111,10 @@ class LocationFirebaseHelper extends FirebaseHelper{
             loc.setLocation(temp);
             loc.setTimeCreated(wow.child("time_created").getValue(String.class));
             location_list.add(0,loc);
+        }
+        if(location_list.size() > 50){ //deletes older location updates
+            for(int i=50; i<location_list.size(); i++)
+              delete(location_list.get(i),childId);
         }
     }
 

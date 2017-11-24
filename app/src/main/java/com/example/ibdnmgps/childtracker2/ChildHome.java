@@ -68,14 +68,14 @@ public class ChildHome extends AppCompatActivity {
         setContentView(R.layout.activity_child_home);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
+
         db = Utils.getDatabase().getReference();
         h = new ChildTrackerDatabaseHelper(getApplicationContext());
         ref = h.getFiles("child_ref");
         helper = new LocationFirebaseHelper(db, ref);
 
-        if (user != null) {
-            name = user.getDisplayName();
-        } else name="childId" + ref;
+        name = h.getFiles("name");
+
 
 
         sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
@@ -155,7 +155,6 @@ public class ChildHome extends AppCompatActivity {
 
             sosBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.button_style));
         }
-
     }
 
     public void gotoMenu(View view) {
