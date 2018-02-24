@@ -117,10 +117,12 @@ public class ChildTrackerService extends Service {
             @Override
             public void onLocationChanged(Location location) {
                 //broadcast location
-                Intent i = new Intent("location_update");
-                i.putExtra("coordinates", location.getLongitude() + " " + location.getLatitude());
-                sendBroadcast(i);
-                handleNewLocation(location);
+                if(location!=null) {
+                    Intent i = new Intent("location_update");
+                    i.putExtra("coordinates", location.getLongitude() + " " + location.getLatitude());
+                    sendBroadcast(i);
+                    handleNewLocation(location);
+                }
             }
 
             @Override
@@ -145,16 +147,21 @@ public class ChildTrackerService extends Service {
     }
 
     private void setLocationManager() {
-        locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         try {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, interval, 0, listener); // ToDo
-        }catch(Exception e) {
-            try{
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, interval, 0, listener); // ToDo
+            locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+            try {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, interval, 0, listener); // ToDo
+            }catch(Exception e) {
+                try{
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, interval, 0, listener); // ToDo
 
-            }catch(Exception ex) {
-                Log.i(TAG, "cannot_retrieve_location");
+                }catch(Exception ex) {
+                    Log.i(TAG, "cannot_retrieve_location");
+                }
             }
+        }catch(Exception e){
+            e.printStackTrace();
+
         }
     }
 
@@ -205,11 +212,13 @@ public class ChildTrackerService extends Service {
             Calendar cal = Calendar.getInstance();
             cal.set(Calendar.HOUR_OF_DAY, Calendar.HOUR_OF_DAY);
             cal.set(Calendar.MINUTE, Calendar.MINUTE);
-            if(cal.getTime().after(startCurfew.getTime()) && cal.getTime().before(endCurfew.getTime()) ){
-                System.out.println("curfew timee");
-                scheduleNotification(getNotification(2),2,System.currentTimeMillis()+5000);
-            } else {
-                System.out.println("not curfew timee");
+            if(startCurfew != null && endCurfew != null) {
+                if (cal.getTime().after(startCurfew.getTime()) && cal.getTime().before(endCurfew.getTime())) {
+                    System.out.println("curfew timee");
+                    scheduleNotification(getNotification(2), 2, System.currentTimeMillis() + 5000);
+                } else {
+                    System.out.println("not curfew timee");
+                }
             }
         }
     }

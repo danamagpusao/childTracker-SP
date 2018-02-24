@@ -1,10 +1,7 @@
 package com.example.ibdnmgps.childtracker2;
 
-import android.*;
 import android.Manifest;
 import android.app.Activity;
-import android.app.ActivityManager;
-import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,7 +10,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -34,15 +30,10 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 
 public class ChildHome extends AppCompatActivity {
     private BroadcastReceiver broadcastReceiver;
@@ -121,9 +112,13 @@ public class ChildHome extends AppCompatActivity {
         if (!runtime_permissions()) {
             Intent i = new Intent(getApplicationContext(), ChildTrackerService.class);
             startService(i);
-            if(locationManager==null)
+            if(locationManager==null) {
+                try{
                 locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
             sosBtn.setOnTouchListener(new View.OnTouchListener() {
                 private final Handler handler = new Handler();
                 private final Runnable runnable = new Runnable() {
@@ -185,13 +180,14 @@ public class ChildHome extends AppCompatActivity {
         }
         Location location = getLocation();
         ChildLocation child_loc = new ChildLocation();
-        child_loc.setLocation(location);
-        Date date = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy h:mm:ss a");
-        String formattedDate = sdf.format(date);
-        child_loc.setTimeCreated(formattedDate);
-        String loc_ref = helper.save(child_loc);
-
+        if(location != null) {
+            child_loc.setLocation(location);
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy h:mm:ss a");
+            String formattedDate = sdf.format(date);
+            child_loc.setTimeCreated(formattedDate);
+            String loc_ref = helper.save(child_loc);
+        }
         //trigger SMS
         try {
             //trigger SMS
@@ -348,16 +344,8 @@ public class ChildHome extends AppCompatActivity {
 
     public Location getLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-          //  return getLocation();
-        }
 
+        }
         //dangerous
         if(locationManager == null) return null;
         else return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);

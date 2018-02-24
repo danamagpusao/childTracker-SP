@@ -89,7 +89,7 @@ public class ChildTrackerDatabaseHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put(KEY_FIRST, 1);
         values.put(KEY_MODE, "");
-        values.put(KEY_PIN_CODE, "");
+        values.put(KEY_PIN_CODE, "1234");
         values.put(KEY_DEVICE, "");
         values.put(KEY_CHILD_REF, "");
         values.put(KEY_INT_OFF, 300000);

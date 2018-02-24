@@ -20,11 +20,8 @@ public class ChildLock extends AppCompatActivity {
         pincode_et = (EditText) findViewById(R.id.childLock_pincode);
 
         pincode = h.getFiles("pin_code");
-        if(pincode == null){
-         pincode = "1234";
-        }
-        else if(pincode.isEmpty()){
-         pincode = "1234";
+        if(pincode == null || pincode.isEmpty()){
+            pincode = "1234";
         }
     }
 

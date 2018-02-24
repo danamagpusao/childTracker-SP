@@ -1,12 +1,11 @@
 package com.example.ibdnmgps.childtracker2;
 
 
-import android.app.Notification;
+
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 
-import android.content.Context;
 import android.content.Intent;
 
 import android.location.Location;
@@ -15,7 +14,6 @@ import android.location.LocationManager;
 
 
 import android.media.RingtoneManager;
-import android.os.Handler;
 import android.os.IBinder;
 
 import android.support.annotation.Nullable;
@@ -29,7 +27,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 
-import static java.sql.DriverManager.println;
 
 /**
  * 7/7/2017
@@ -38,8 +35,6 @@ import static java.sql.DriverManager.println;
 public class SOSNotifService extends Service {
 
     private final String TAG = "SOSNotifService";
-    private LocationListener listener;
-    private LocationManager locationManager;
 
     private DatabaseReference db;
     private String ref;
@@ -135,10 +130,6 @@ public class SOSNotifService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(locationManager != null){
-            //noinspection MissingPermission
-            locationManager.removeUpdates(listener);
-        }
 
         Toast.makeText(this, "SOSNotifService Stopped", Toast.LENGTH_SHORT).show();
     }

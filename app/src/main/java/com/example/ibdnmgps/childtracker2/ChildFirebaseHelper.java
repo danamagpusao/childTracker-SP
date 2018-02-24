@@ -104,12 +104,6 @@ public class ChildFirebaseHelper extends FirebaseHelper {
         return "";
     }
 
-    //Todo DELETE
-    public Boolean remove(Child child)
-    {
-
-        return false;
-    }
 
     //READ
     public ArrayList<Child> retrieve() {
