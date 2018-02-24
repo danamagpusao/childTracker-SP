@@ -75,12 +75,15 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
         save_btn = (Button) findViewById(R.id.select_safezone);
         save_btn.setOnClickListener(this);
         safezone_loc = new Location("center");
+        mo = new MarkerOptions();
          if(choice == null){
             save_btn.setVisibility(View.GONE);
             radius_txt.setVisibility(View.GONE);
             if(safezone == null) finish();
         } else {
              radius_cur_txt.setVisibility(View.GONE);
+             mo.draggable(true);
+             mo.title("Drag and drop me!");
          }
         if(safezone!=null) {
             radius_cur_txt.setText("Radius: "+ safezone.getRadius() +" m");
@@ -178,10 +181,7 @@ public class SafeZoneSelection extends FragmentActivity implements OnMapReadyCal
         isInitialized = true;
         mMap = googleMap;
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(markerlatlng,15));
-        mo = new MarkerOptions()
-                .position(markerlatlng)
-                .title("Drag and drop me!");
-        if(safezone == null)mo.draggable(true);
+        mo.position(markerlatlng);
         if(marker == null)
             marker =  mMap.addMarker(mo);
         marker.showInfoWindow();
