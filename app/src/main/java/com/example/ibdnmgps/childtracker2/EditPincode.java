@@ -15,6 +15,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.SmsManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -30,13 +31,15 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 
+import static com.example.ibdnmgps.childtracker2.ChildTrackerDatabaseHelper.LOG;
+
 public class EditPincode extends AppCompatActivity {
 
     private Button ok_btn;
     private EditText pincode,cur_pincode;
     private EditText confirm;
     private CheckBox checkbox;
-    private ChildTrackerDatabaseHelper h;
+    private ChildTrackerDatabaseHelper childTrackerDatabaseHelper;
     private int PERMISSION_SEND_SMS = 1;
     private PendingIntent sentPI, deliveredPI;
     private String SENT = "SMS_SENT";
@@ -52,7 +55,7 @@ public class EditPincode extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_pincode);
 
-        h = new ChildTrackerDatabaseHelper(getApplicationContext());
+        childTrackerDatabaseHelper = new ChildTrackerDatabaseHelper(getApplicationContext());
         db = FirebaseDatabase.getInstance().getReference();
         //initialize components
         ok_btn = (Button) findViewById(R.id.ep_ok);
@@ -60,7 +63,6 @@ public class EditPincode extends AppCompatActivity {
         confirm = (EditText) findViewById(R.id.ep_confirm);
         cur_pincode = (EditText) findViewById(R.id.ep_cur_pincode);
         checkbox = (CheckBox) findViewById(R.id.ep_checkbox);
-
 
         sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT),0);
         deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED),0);
@@ -93,10 +95,16 @@ public class EditPincode extends AppCompatActivity {
     }
 
     public void savePincode(View view) {
-        //check if pincode and confirm are equal
-        if(!cur_pincode.getText().toString().equals(h.getFiles("pin_code"))) cur_pincode.setError("Wrong pincode!");
+        //Checks if current pincode is correct
+        String currentPincode = childTrackerDatabaseHelper.getFiles("pin_code");
+        Log.e(LOG, currentPincode+ " == "  + cur_pincode.getText().toString());
+        if(currentPincode == null || currentPincode.isEmpty()){
+            currentPincode = "1234";
+        }
+
+        if(!cur_pincode.getText().toString().equals(currentPincode)) cur_pincode.setError("Wrong pincode!");
         else if(!pincode.getText().toString().equals(confirm.getText().toString())){
-            confirm.setError("Pincode does not match!");
+            confirm.setError("Pincode and confirm pincode do not match!");
         }else if(pincode.getText().toString().length() != 4){
             confirm.setError("Must be 4 digit number!");
         }
@@ -109,7 +117,7 @@ public class EditPincode extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             ContentValues values = new ContentValues();
                             values.put(ChildTrackerDatabaseHelper.KEY_PIN_CODE, pincode.getText().toString());
-                            h.updateChildTracker(values);
+                            childTrackerDatabaseHelper.updateChildTracker(values);
                             if(checkbox.isChecked()){
                                 if(!parent_list.isEmpty())
                                     for(Parent p : parent_list)
@@ -133,7 +141,6 @@ public class EditPincode extends AppCompatActivity {
             SmsManager sms =  SmsManager.getDefault();
             sms.sendTextMessage(number,null,
                     "The pincode for this childtracker has been changed: " + pincode, sentPI, deliveredPI);
-
     }
 
 
@@ -196,7 +203,7 @@ public class EditPincode extends AppCompatActivity {
     private void retrieveParent(DataSnapshot dataSnapshot) {
         for (DataSnapshot ds : dataSnapshot.getChildren())
         {
-            if(dataSnapshot.getKey().equals("Parent") && ds.child("children/"+h.getFiles("child_ref").toString()).getValue() != null) {
+            if(dataSnapshot.getKey().equals("Parent") && ds.child("children/"+childTrackerDatabaseHelper.getFiles("child_ref").toString()).getValue() != null) {
                 Parent parent = new Parent();
                 parent.setId(ds.getKey());
                 parent.setPhoneNum(ds.child("phoneNum").getValue(String.class));
@@ -204,13 +211,7 @@ public class EditPincode extends AppCompatActivity {
                 if(!parent_list.contains(parent))
                     parent_list.add(parent);
                 System.out.println(parent.getName());
-
             }
         }
     }
-
-
-
-
-
 }
